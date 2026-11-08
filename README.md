@@ -48,7 +48,7 @@ Chaque mission se termine par une revue : ce que tu as fait, pourquoi la méthod
 - **Sauvegardes** : automatique, trois emplacements, export et import.
 - **Confort** : tout au clavier, adapté au mobile, mouvement réduit, taille de texte réglable, son optionnel et coupé par défaut.
 
-![L'analyse d'une base de données](docs/screens/mission.png)
+![Le brief d'une mission](docs/screens/mission.png)
 
 ## Tout est simulé
 
