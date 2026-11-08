@@ -1,7 +1,7 @@
 import { int, rng } from '../../game/random';
 
 /** Metadata Gramtele claims not to keep (M7). Synthetic. */
-export function gramteleMetaSeed(handle: string): string {
+export function gramteleMetaSeed(handle: string, standing = 15): string {
   const r = rng(47);
   const safe = handle.replace(/[^a-z0-9_-]/gi, '');
   const out: string[] = [
@@ -20,7 +20,7 @@ export function gramteleMetaSeed(handle: string): string {
     [4, 'ROOTLESS', '2024-01-14', 120, 'watch'],
     [5, 'ECHO', '2025-09-02', 40, 'watch'],
     [6, 'lowtide', '2025-02-11', 0, 'closed'],
-    [7, safe, '2026-10-12', 15, 'contractor'],
+    [7, safe, '2026-10-12', standing, 'contractor'],
     [8, 'tinsel', '2024-11-20', 230, null],
     [9, 'ostrich_farm', '2025-05-03', 88, null],
     [10, 'kelpie', '2024-03-08', 410, null],

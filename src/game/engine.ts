@@ -4,7 +4,8 @@
  */
 import { CHARACTERS } from '../data/characters';
 import { CHAT_REACTIONS, smalltalkFor } from '../data/dialogue/smalltalk';
-import { tr } from '../i18n';
+import { isLine, lineIn, setLineVars, tr } from '../i18n';
+import { CLEAN_BONUS, rankOf, standingOf, TABLE, tierOf } from '../data/reputation';
 import { gramteleMetaSeed } from '../data/databases/gramtele-meta';
 import { nexusArchiveSeed } from '../data/databases/nexus-archive';
 import { BEATS, WORLD_RULES } from '../data/dialogue';
@@ -25,7 +26,7 @@ import type {
 } from './types';
 import { NetEvent, VirtualNet } from './virtual-network/net';
 
-export const SAVE_VERSION = 1;
+export const SAVE_VERSION = 2;
 const START_CLOCK = Date.parse('2026-10-12T21:47:00Z');
 
 export function levelFor(xp: number): number {
@@ -98,7 +99,7 @@ export function matchChoice(text: string, choices: Choice[]): Choice | null {
   let best: Choice | null = null;
   let bestScore = 0;
   for (const c of choices) {
-    for (const source of [c.label, c.reply ?? c.label, tr(c.label), tr(c.reply ?? c.label)]) {
+    for (const source of [c.label, c.reply ?? c.label].flatMap(sourcesOf)) {
       const words = wordsOf(source);
       if (!words.length) continue;
       const hits = said.filter((w) => words.includes(w)).length;
@@ -110,6 +111,12 @@ export function matchChoice(text: string, choices: Choice[]): Choice | null {
     }
   }
   return bestScore >= 0.72 ? best : null;
+}
+
+/** What a suggested reply says, in every language it exists in. */
+function sourcesOf(text: string): string[] {
+  if (!isLine(text)) return [text, tr(text)];
+  return (['en', 'fr'] as const).flatMap((l) => lineIn(l, text) ?? []);
 }
 
 export interface ReportResponses {
@@ -143,7 +150,7 @@ export class GameEngine implements GameApi {
     this.lastTick = this.realNow();
     this.db = new DbEngine({
       nexus_archive: nexusArchiveSeed,
-      gramtele_meta: () => gramteleMetaSeed(this.state.handle || 'c-0047'),
+      gramtele_meta: () => gramteleMetaSeed(this.state.handle || 'c-0047', this.state.standing),
     });
     this.net = new VirtualNet(
       { hosts: HOSTS, dns: DNS, sites: buildSites(), whois: WHOIS },
@@ -175,6 +182,22 @@ export class GameEngine implements GameApi {
     this.shell.history = [...state.shellHistory];
     const fs = this.fileSystem('workbench');
     if (fs.isDir(state.cwd)) this.shell.setCwd(state.cwd);
+    setLineVars({ handle: state.handle || 'c-0047' });
+    if (state.version < SAVE_VERSION) this.migrate();
+  }
+
+  /** Saves from before the scene had a memory: credit finished work, and do not replay chatter they missed. */
+  private migrate(): void {
+    let earned = 0;
+    for (const m of MISSIONS) {
+      const p = this.state.missions[m.id];
+      if (p?.status !== 'done') continue;
+      earned += m.rewards.standing + this.markPerformance(m, p);
+    }
+    this.state.standing = Math.max(this.state.standing, earned);
+    for (const t of TABLE) if (this.state.standing > standingOf(t.handle, this.state.flags)) this.state.flags[`passed:${t.handle}`] = true;
+    for (const b of BEATS) if (b.social && !this.state.firedBeats.includes(b.id) && this.cond(b.when)) this.state.firedBeats.push(b.id);
+    this.state.version = SAVE_VERSION;
   }
 
   // ---------- infrastructure ----------
@@ -229,6 +252,7 @@ export class GameEngine implements GameApi {
 
   signUp(handle: string): void {
     this.state.handle = handle;
+    setLineVars({ handle });
     this.state.flags.signed_up = true;
     this.state.threads.NULL ??= { messages: [], unread: 0, archived: false, visible: true, pinned: true };
     this.addJournal('Created a Gramtele account. Nothing about this felt important at the time.', 'story');
@@ -484,6 +508,7 @@ export class GameEngine implements GameApi {
         if (m.objectives.every((o) => p.objectives.includes(o.id))) this.completeMission(m, p);
       }
       this.evaluateSkills();
+      this.evaluateTable();
       for (const rule of WORLD_RULES) {
         if (!this.state.firedBeats.includes(rule.id) && this.cond(rule.when)) {
           this.state.firedBeats.push(rule.id);
@@ -491,6 +516,16 @@ export class GameEngine implements GameApi {
         }
       }
       this.pump();
+    }
+  }
+
+  /** Passing someone on the table is public, and it is remembered. */
+  private evaluateTable(): void {
+    for (const t of TABLE) {
+      const flag = `passed:${t.handle}`;
+      if (this.state.flags[flag] || this.state.standing <= standingOf(t.handle, this.state.flags)) continue;
+      this.state.flags[flag] = true;
+      this.toast({ kind: 'system', title: tr('You passed {name} on the table', { name: t.handle }), body: tr('Standing {n}. Rank: {rank}.', { n: this.state.standing, rank: tr(rankOf(this.state.standing).title) }) });
     }
   }
 
@@ -540,6 +575,9 @@ export class GameEngine implements GameApi {
     if ('beat' in c) return this.state.firedBeats.includes(c.beat);
     if ('objectiveDone' in c) return !!this.state.missions[c.objectiveDone[0]]?.objectives.includes(c.objectiveDone[1]);
     if ('optionalDone' in c) return !!this.state.missions[c.optionalDone[0]]?.optionals.includes(c.optionalDone[1]);
+    if ('standing' in c) return this.state.standing >= c.standing;
+    if ('read' in c) return this.state.seen.reads.includes(`workbench:${normalize(c.read)}`);
+    if ('stat' in c) return this.stats()[c.stat[0]] >= c.stat[1];
     return !!this.state.signals[c.signal];
   }
 
@@ -650,11 +688,23 @@ export class GameEngine implements GameApi {
     this.addXp(m.rewards.xp);
     this.state.credits += m.rewards.credits;
     this.state.standing += m.rewards.standing;
+    const bonus = this.markPerformance(m, p);
+    this.state.standing += bonus;
+    if (bonus) this.toast({ kind: 'system', title: tr('Standing +{n}', { n: bonus }), body: tr('People read how a job was done, not only that it was.') });
     if (!Object.keys(p.hints).length) this.award('no_hints');
     if (p.optionals.length === m.optionals.length) this.award('explorer');
     this.toast({ kind: 'mission', title: tr('Mission complete: {title}', { title: tr(m.title) }), body: tr('+{xp} XP, +{credits} credits', { xp: m.rewards.xp, credits: m.rewards.credits }) });
     this.addJournal('Completed "{title}".', 'story', { title: m.title });
     if (m.onComplete) this.apply(m.onComplete);
+  }
+
+  /** Records how a finished job was done, for people to talk about. Returns the standing it is worth. */
+  private markPerformance(m: Mission, p: MissionProgress): number {
+    const f = this.state.flags;
+    f[Object.keys(p.hints).length ? `hinted:${m.id}` : `clean:${m.id}`] = true;
+    if (m.optionals.length && p.optionals.length === m.optionals.length) f[`thorough:${m.id}`] = true;
+    if (p.reportDone && p.reportScore === 1 && !p.reportWrong?.length) f[`flawless:${m.id}`] = true;
+    return [`clean:${m.id}`, `thorough:${m.id}`, `flawless:${m.id}`].filter((k) => f[k]).length * CLEAN_BONUS;
   }
 
   activeProgress(): MissionProgress | null {
@@ -822,15 +872,16 @@ export class GameEngine implements GameApi {
     for (const b of BEATS) {
       if (this.state.firedBeats.includes(b.id)) continue;
       if (!this.cond(b.when)) continue;
-      const blocked = this.state.pendingMessages.some((m) => m.thread === b.thread) || this.state.pendingChoices.some((c) => c.thread === b.thread);
+      const blocked = this.state.pendingMessages.some((m) => m.thread === b.thread) || this.state.pendingChoices.some((c) => c.thread === b.thread && !BEATS.find((x) => x.id === c.beatId)?.expires);
       if (blocked) continue;
+      this.state.pendingChoices = this.state.pendingChoices.filter((c) => c.thread !== b.thread);
       this.fire(b);
     }
   }
 
   private typingDelay(msg: Msg): number {
     if (this.state.settings.typingSpeed === 'instant') return 150;
-    return msg.delay ?? Math.min(700 + msg.text.length * 18, 3600);
+    return msg.delay ?? Math.min(700 + tr(msg.text).length * 18, 3600);
   }
 
   private fire(b: Beat): void {
@@ -876,7 +927,10 @@ export class GameEngine implements GameApi {
     th.visible = true;
     if (from !== 'sys' && !th.muted) {
       const shown = tr(msg.text);
-      this.toast({ kind: 'message', title: CHARACTERS[threadId].handle, body: shown.length > 90 ? `${shown.slice(0, 90)}...` : shown, thread: threadId });
+      // A group can post several lines in a row: one notification is enough, showing the latest.
+      if (CHARACTERS[threadId].kind === 'group') this.toasts = this.toasts.filter((t) => t.thread !== threadId);
+      const title = CHARACTERS[threadId].kind === 'group' ? `${CHARACTERS[threadId].handle} · ${from}` : CHARACTERS[threadId].handle;
+      this.toast({ kind: 'message', title, body: shown.length > 90 ? `${shown.slice(0, 90)}...` : shown, thread: threadId });
     }
     if (from !== 'sys') this.reactToPlayer(threadId, cm.id);
   }
@@ -944,7 +998,7 @@ export class GameEngine implements GameApi {
     const th = this.thread(id);
     const n = th.smalltalk ?? 0;
     th.smalltalk = n + 1;
-    const reply = smalltalkFor(id, n, attachment);
+    const reply = smalltalkFor(id, n, attachment, tierOf(this.state.standing));
     if (reply) this.queue(id, [reply], this.realNow() + 500);
   }
 

@@ -261,3 +261,5 @@
   .term { font-size: 0.8125rem; }
   .term-scroll { padding: 10px; }
 }
+
+.rank-next { display: block; font-size: 12px; font-weight: 400; opacity: 0.7; }

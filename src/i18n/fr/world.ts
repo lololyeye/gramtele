@@ -10,15 +10,15 @@ export const FR_WORLD: Record<string, string> = {
   'if you are reading this they gave you my box.\nthe image gets reused. the desk thinks wiping home is enough.\n\nwhat i know:\n- check who pays. lindgate is not what it says it is.\n- the exercises are not exercises.\n- everything you type goes upstream. look in /var/log.\n\nthey call people like us c-numbers. i am c-0041.\nif you are smart, stop before the job with the portal.\nif you are smarter than me, do not stop, and keep copies.\n\n  - lowtide\n':
     'si tu lis ça, c’est qu’ils t’ont donné ma machine.\nl’image est réutilisée. le bureau croit qu’effacer home suffit.\n\nce que je sais :\n- vérifie qui paie. lindgate n’est pas ce qu’elle prétend être.\n- les exercices ne sont pas des exercices.\n- tout ce que tu tapes remonte en amont. regarde dans /var/log.\n\nils appellent les gens comme nous des numéros c. je suis c-0041.\nsi tu es malin, arrête-toi avant le boulot avec le portail.\nsi tu es plus malin que moi, ne t’arrête pas, et garde des copies.\n\n  - lowtide\n',
   'LINDGATE ADVISORY - CONTRACTOR INTAKE\n\nWelcome. This workbench is an isolated training image. Every\nassignment is carried out here.\n\nYour relay settings are in /opt/relay/relay.conf. Read them, and\nconfirm your contractor reference to the desk.\n\nFile outstanding findings with the "submit" command.\n':
-    'LINDGATE ADVISORY - ACCUEIL DES CONTRACTUELS\n\nBienvenue. Ce poste est une image de formation isolée. Toutes\nles missions se déroulent ici.\n\nVos réglages de relais se trouvent dans /opt/relay/relay.conf. Lisez-les,\npuis confirmez votre référence de contractuel au bureau.\n\nDéposez vos conclusions en attente avec la commande "submit".\n',
+    'LINDGATE ADVISORY - ACCUEIL DES CONTRACTUELS\n\nBienvenue. Ce poste est une image de formation isolée. Toutes\nles missions se déroulent ici.\n\nVos réglages de relais se trouvent dans /opt/relay/relay.conf. Lisez-les,\npuis confirmez votre référence de prestataire au bureau.\n\nDéposez vos conclusions en attente avec la commande "submit".\n',
   'DRAFT - do not use\ncontractor reference: c-0000 (template)\nrelay: replace-me\n':
-    'BROUILLON - ne pas utiliser\nréférence de contractuel : c-0000 (modèle)\nrelais : a-remplacer\n',
+    'BROUILLON - ne pas utiliser\nréférence de prestataire : c-0000 (modèle)\nrelais : a-remplacer\n',
   'Assignments arrive under /missions/ when you accept them.\nman COMMAND explains anything you do not recognise.\n':
     'Les missions arrivent dans /missions/ quand vous les acceptez.\nman COMMANDE explique tout ce que vous ne reconnaissez pas.\n',
   'gt-relayd: keeps contractor workbenches connected to the desk.\nDo not stop this service. See relay.conf.\n':
-    'gt-relayd : garde les postes des contractuels connectés au bureau.\nN’arrêtez pas ce service. Voir relay.conf.\n',
+    'gt-relayd : garde les postes des prestataires connectés au bureau.\nN’arrêtez pas ce service. Voir relay.conf.\n',
   'Lindgate Advisory contractor workbench.\nAuthorized use only. This system is monitored.\n':
-    'Poste de travail de contractuel, Lindgate Advisory.\nUsage autorisé uniquement. Ce système est surveillé.\n',
+    'Poste de travail de prestataire, Lindgate Advisory.\nUsage autorisé uniquement. Ce système est surveillé.\n',
   '# added for log rotation debugging, remove before shipping image\nplayer ALL=(root) NOPASSWD: /usr/bin/cat /var/log/workbench/*\n':
     '# ajouté pour le débogage de la rotation des journaux, à retirer avant de livrer l’image\nplayer ALL=(root) NOPASSWD: /usr/bin/cat /var/log/workbench/*\n',
 
@@ -37,12 +37,12 @@ export const FR_WORLD: Record<string, string> = {
   'Media contact: press@nexus-labs.test': 'Contact presse : press@nexus-labs.test',
   'Halden Freight incident: attribution summary': 'Incident Halden Freight : résumé d’attribution',
   'Orion Security attribution summary. Client: Halden Freight.': 'Résumé d’attribution d’Orion Security. Client : Halden Freight.',
-  'The intrusion originated from a contractor workstation, profile gt-workbench, contractor ref c-0031.': 'L’intrusion provient d’un poste de contractuel, profil gt-workbench, référence c-0031.',
-  'The contractor acted alone. Findings have been shared with the police.': 'Le contractuel a agi seul. Les conclusions ont été transmises à la police.',
+  'The intrusion originated from a contractor workstation, profile gt-workbench, contractor ref c-0031.': 'L’intrusion provient d’un poste de prestataire, profil gt-workbench, référence c-0031.',
+  'The contractor acted alone. Findings have been shared with the police.': 'Le prestataire a agi seul. Les conclusions ont été transmises à la police.',
   'Confidence: high.': 'Niveau de confiance : élevé.',
   'Brask Utilities incident: attribution summary': 'Incident Brask Utilities : résumé d’attribution',
   'Orion Security attribution summary. Client: Brask Utilities.': 'Résumé d’attribution d’Orion Security. Client : Brask Utilities.',
-  'The intrusion originated from a contractor workstation, profile gt-workbench, contractor ref c-0041.': 'L’intrusion provient d’un poste de contractuel, profil gt-workbench, référence c-0041.',
+  'The intrusion originated from a contractor workstation, profile gt-workbench, contractor ref c-0041.': 'L’intrusion provient d’un poste de prestataire, profil gt-workbench, référence c-0041.',
 
   // ---------- Gramtele ----------
   about: 'à propos',
@@ -259,7 +259,7 @@ export const FR_WORLD: Record<string, string> = {
   'Brask Utilities: unanswered letter from B. Oyelaran (2025)': 'Brask Utilities : lettre sans réponse de B. Oyelaran (2025)',
   'Halden appeal | The Open Archive': 'Appel Halden | Les Archives ouvertes',
   'Halden Freight: appeal bundle': 'Halden Freight : dossier d’appel',
-  'Jonah Kessel, contractor, maintains that the workstation attributed to him was issued by an employer he could never identify, and that he was hired under the handle ROOTLESS through an anonymous network. The court accepted the attribution summary by Orion Security. Appeal refused.': 'Jonah Kessel, contractuel, soutient que le poste qu’on lui attribue a été fourni par un employeur qu’il n’a jamais pu identifier, et qu’il a été recruté sous le pseudonyme ROOTLESS via un réseau anonyme. Le tribunal a retenu le résumé d’attribution d’Orion Security. Appel rejeté.',
+  'Jonah Kessel, contractor, maintains that the workstation attributed to him was issued by an employer he could never identify, and that he was hired under the handle ROOTLESS through an anonymous network. The court accepted the attribution summary by Orion Security. Appeal refused.': 'Jonah Kessel, prestataire, soutient que le poste qu’on lui attribue a été fourni par un employeur qu’il n’a jamais pu identifier, et qu’il a été recruté sous le pseudonyme ROOTLESS via un réseau anonyme. Le tribunal a retenu le résumé d’attribution d’Orion Security. Appel rejeté.',
   'Brask letter | The Open Archive': 'Lettre Brask | Les Archives ouvertes',
   'Brask Utilities: letter': 'Brask Utilities : lettre',
   '"My name is Bram Oyelaran. I did not break into anything. They gave me a machine and a set of exercises and I believed they were exercises." Received by post, August 2025. No reply address. We have not been able to contact the author since.': '« Je m’appelle Bram Oyelaran. Je n’ai pénétré nulle part. On m’a donné une machine et une série d’exercices, et j’ai cru que c’étaient des exercices. » Reçue par la poste, août 2025. Pas d’adresse de retour. Nous n’avons pas pu joindre son auteur depuis.',

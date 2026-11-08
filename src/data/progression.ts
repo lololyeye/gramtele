@@ -1,4 +1,5 @@
 import type { Achievement, EndingId, EvidenceDef, GameState, SkillId, SkillNode } from '../game/types';
+import { lineKey } from '../i18n';
 
 export const SKILL_TITLES: Record<SkillId, string> = {
   linux: 'Linux',
@@ -54,6 +55,9 @@ export const ACHIEVEMENTS: Achievement[] = [
   { id: 'pipeline', title: 'Plumber', text: 'Ran a pipeline with four or more stages.' },
   { id: 'mirror', title: 'Mirror', text: 'Read your own audit log.', hidden: true },
   { id: 'c_number', title: 'A date', text: 'Found your own closure date.', hidden: true },
+  { id: 'receipts', title: 'Receipts', text: 'Opened the file before opening your mouth, in front of everyone.', hidden: true },
+  { id: 'corrected', title: 'Compressing', text: 'Corrected MOTH in public.', hidden: true },
+  { id: 'asked_null', title: 'Which one of you', text: 'Asked NULL the question nobody had asked in three years.', hidden: true },
   { id: 'all_endings_one', title: 'The end of the road', text: 'Reached an ending.' },
 ];
 
@@ -75,66 +79,66 @@ interface EndingText {
   paragraphs: (s: GameState) => string[];
 }
 
+const end = (id: EndingId) => ({
+  title: lineKey(`end.${id}.title`),
+  epigraph: lineKey(`end.${id}.epigraph`),
+});
+const p = (id: EndingId, key: string) => lineKey(`end.${id}.p.${key}`);
+/** How the scene remembers you. Only people it had heard of get a line. */
+const known = (s: GameState) => (s.standing ?? 0) >= 300;
+
 export const ENDINGS: Record<EndingId, EndingText> = {
   record: {
-    title: 'The Open Record',
-    epigraph: 'Public records belong to the public.',
+    ...end('record'),
     paragraphs: (s) => [
-      'Maud Ferreira read your dossier that night and every hash matched. She published eleven days later, with the private names redacted and the audit rows in full.',
-      'Nexus Labs issued a statement, then a second one. The regulator opened a file on NX-417. Two families received letters that should have been written in 2025.',
-      s.flags.gave_location || s.flags.gave_echo_to_moth
-        ? 'Elin Maret did not see it. By then she had moved twice more because of things you had already handed over, and when the Archive wrote to her, the relay she had used for a year was silent. Your dossier made her a witness, and you know who made her easy to find.'
-        : 'Elin Maret was named as the source by a newspaper within the month, against her wishes. She gave evidence anyway, in a plain, exact voice, and went back to somewhere with a lake.',
-      s.flags.vanta_helps
-        ? 'Your closure form went missing for nine days, which was long enough. Sanna Reik resigned from Orion before anyone asked her to, and gave a statement that spared nobody, herself included.'
-        : 'Orion\'s summary with your number on it was filed on 5 November, one week too late to be believed. It still took two lawyers and most of a year to make it go away.',
-      'Gramtele lost a third of its handles in a week. The rest stayed. It was still the easiest place to find someone who would ask a good question.',
+      p('record', 'read'),
+      p('record', 'fallout'),
+      p('record', s.flags.gave_location || s.flags.gave_echo_to_moth ? 'elin_hurt' : 'elin_safe'),
+      p('record', s.flags.vanta_helps ? 'vanta_helped' : 'vanta_not'),
+      ...(known(s) ? [p('record', 'coda')] : []),
+      p('record', 'after'),
     ],
   },
   custody: {
-    title: 'Custody',
-    epigraph: 'That choice was taken from me once.',
+    ...end('custody'),
     paragraphs: (s) => [
-      'You sent the sealed dossier to a relay that answered at dawn. Then you waited, which you were bad at.',
-      'Elin Maret took seven weeks. She found a lawyer who did not flinch and a regulator\'s inspector who had already been uneasy about day 40 of dosing. She went in on a Tuesday, under her own name, with her own export and your hashes.',
-      s.flags.gave_location || s.flags.gave_echo_to_moth
-        ? 'She never said she forgave you for what you handed over earlier. Her last message said only: "Received. Verified." You understood it was the most she could give, and more than you had a right to.'
-        : 'Her last message to you was one line of base64. You decoded it by hand, for the pleasure of it. It said: thank you for leaving it out.',
-      'It did not become a scandal. It became a slow inquiry, a withdrawn licence and a quiet settlement. Blackwell is still in business, under another name, and you still check who owns things.',
-      s.flags.vanta_helps ? 'Your closure form went missing, and nobody ever filed a report with your number on it. You do not know whom to thank, and you would not.' : 'A report with your number on it did appear. It took a long time to be shown to be false. Your hashes helped.',
+      p('custody', 'sent'),
+      p('custody', 'weeks'),
+      p('custody', s.flags.gave_location || s.flags.gave_echo_to_moth ? 'hurt' : 'safe'),
+      p('custody', 'slow'),
+      p('custody', s.flags.vanta_helps ? 'vanta_helped' : 'vanta_not'),
+      ...(known(s) ? [p('custody', 'coda')] : []),
     ],
   },
   leverage: {
-    title: 'Leverage',
-    epigraph: 'The world stays exactly as bad, but we are out of it.',
+    ...end('leverage'),
     paragraphs: (s) => [
-      'MOTH was as good as the offer. Within a month there was no closure date, no report and no workbench. A new identity arrived by post, with a bank account that had enough in it to be insulting.',
-      'Nobody went to prison. NX-417 stayed filed. Calvexin was licensed the following spring, and you read the press release, and then you stopped reading press releases.',
-      s.flags.gave_echo_to_moth
-        ? 'You had given MOTH Elin\'s pattern too. One morning you checked her relay, for no reason, and it was gone. You will never know if that was her choice.'
-        : 'Elin Maret kept her copy of the audit export. Somewhere, she is still looking for someone who will read it. You could write to her. You have thought about it.',
-      'Six months later a message arrived on an account nobody should have known about. "still holding", it said, with a moth. "only a small favour." You have started to understand how the people at that desk began.',
+      p('leverage', 'offer'),
+      p('leverage', 'nothing'),
+      p('leverage', s.flags.gave_echo_to_moth ? 'gave' : 'kept'),
+      ...(known(s) ? [p('leverage', 'coda')] : []),
+      p('leverage', 'favour'),
     ],
   },
   seat: {
-    title: 'The Seat',
-    epigraph: 'You asked a good question in the open channel.',
+    ...end('seat'),
     paragraphs: (s) => [
-      'The contract was two pages long. The salary was real. They gave you a new device, and on the first of the month you were added to a rota. You were good at it. They had taught you well.',
-      'The closure date on your row was changed to someone else\'s. You did not look up whose.',
-      s.flags.read_notes41 ? 'You are the one who wiped the home directory on the old workbench image. You checked for hidden files first. You found the note, and you kept it, and you do not know why.' : 'Somebody wiped the home directory on your old workbench image. It went back into the pool.',
-      'It is a quiet evening. A new handle has asked something sharp in the open channel, about why a cached answer outlives its record. You open a conversation. You are not {handle} any more. You type the way you were taught: correct punctuation, no hurry.',
-      '"Good evening. You asked a good question. Most people do not ask why."',
+      p('seat', 'contract'),
+      p('seat', 'date'),
+      p('seat', s.flags.read_notes41 ? 'note' : 'nonote'),
+      p('seat', 'coda'),
+      p('seat', 'evening'),
+      p('seat', 'line'),
     ],
   },
   ghost: {
-    title: 'Ghost',
-    epigraph: 'Standing is the only thing a handle owns.',
+    ...end('ghost'),
     paragraphs: (s) => [
-      'You closed the account. You wiped what you could, and you were honest with yourself about how much that was. You took the bus somewhere you had never been, and for a while you checked every car.',
-      'Your closure date came and went. A report appeared with your contractor number on it, and it named no one, because no one had ever known your name. Anonymity turned out to be good for exactly one thing.',
-      s.flags.sealed_kept ? 'You still have a sealed archive on a drive in a drawer.' : 'You kept nothing, which felt like wisdom at the time.',
-      'NX-417 stayed filed. Somewhere, a new contractor is reading a note in a hidden file, written by somebody who went further than you did. You did not leave one. You think about that more than you expected.',
+      p('ghost', 'closed'),
+      p('ghost', 'date'),
+      p('ghost', s.flags.sealed_kept ? 'kept' : 'nothing'),
+      ...(known(s) ? [p('ghost', 'coda')] : []),
+      p('ghost', 'note'),
     ],
   },
 };

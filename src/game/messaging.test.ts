@@ -1,3 +1,4 @@
+import { tr } from '../i18n';
 import { afterEach, describe, expect, it } from 'vitest';
 import { GameEngine, matchChoice, newState } from './engine';
 import { validateSave } from './persistence';
@@ -39,7 +40,7 @@ describe('messaging', () => {
     const av = g.choicesFor('NULL');
     expect(av).toBeTruthy();
     const pick = av!.choices[0];
-    expect(g.sendMessage('NULL', pick.label)).toBe('choice');
+    expect(g.sendMessage('NULL', tr(pick.label))).toBe('choice');
     pass();
     expect(g.state.threads.NULL.messages.some((m) => m.from === 'me' && m.text === (pick.reply ?? pick.label))).toBe(true);
   });

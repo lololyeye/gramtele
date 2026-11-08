@@ -1,6 +1,5 @@
-import { ACHIEVEMENTS, ENDINGS, EVIDENCE, SKILL_NODES, SKILL_TITLES } from '../../data/progression';
+import { ACHIEVEMENTS, EVIDENCE, SKILL_NODES, SKILL_TITLES } from '../../data/progression';
 import { CHAPTERS, M01, M02, M03, M04, M05 } from '../../data/missions';
-import type { EndingId, GameState } from '../../game/types';
 import { Entry, zip } from '../zip';
 import { FR_M01, FR_M02, FR_M03, FR_M04 } from './missions-early';
 
@@ -36,9 +35,9 @@ const FR_M05 = {
       hints: ['.schema montre accounts, devices, sessions et contractors. sessions les relie.', 'SELECT a.handle, s.device_id, COUNT(*) FROM sessions s JOIN accounts a ON a.id = s.account_id GROUP BY 1, 2;', 'NULL a trois lignes dans cette sortie. Un appareil apparaît aussi sous VANTA.'],
     },
     contractors: {
-      text: 'Lisez la table contractors. Combien de contractuels ont été clôturés avant vous, et quand votre propre clôture est-elle prévue ?',
+      text: 'Lisez la table contractors. Combien de prestataires ont été clôturés avant vous, et quand votre propre clôture est-elle prévue ?',
       note: 'Comparez les références d’affaires aux rapports publiés par Orion.',
-      answer: { prompt: 'Contractuels clôturés avant vous', placeholder: 'nombre', wrong: 'Comptez les lignes avec une date closed_on.', right: 'Six personnes, chacune désignée comme seule coupable dans un rapport du même cabinet.' },
+      answer: { prompt: 'Prestataires clôturés avant vous', placeholder: 'nombre', wrong: 'Comptez les lignes avec une date closed_on.', right: 'Six personnes, chacune désignée comme seule coupable dans un rapport du même cabinet.' },
       extraAnswers: [{ prompt: 'Date prévue de votre clôture', placeholder: 'AAAA-MM-JJ', wrong: 'Lisez la colonne de clôture sur votre propre ligne.', right: 'Dans douze jours. Vous n’avez encore rien fait, et il y a déjà une date.' }],
       hints: ['SELECT * FROM contractors;', 'Six lignes ont un closed_on renseigné.', 'Votre ligne indique « scheduled 2026-11-05 ».'],
     },
@@ -123,6 +122,9 @@ const FR_ACHIEVEMENTS: Record<string, { title: string; text: string }> = {
   pipeline: { title: 'Plombier', text: 'A lancé un tube de quatre étapes ou plus.' },
   mirror: { title: 'Miroir', text: 'A lu son propre journal d’audit.' },
   c_number: { title: 'Une date', text: 'A trouvé sa propre date de clôture.' },
+  receipts: { title: 'Les preuves', text: 'A ouvert le fichier avant d’ouvrir sa bouche, devant tout le monde.' },
+  corrected: { title: 'Je simplifiais', text: 'A repris MOTH en public.' },
+  asked_null: { title: 'Lequel d’entre vous', text: 'A posé à NULL la question que personne n’avait posée en trois ans.' },
   all_endings_one: { title: 'Le bout du chemin', text: 'A atteint une fin.' },
 };
 
@@ -133,96 +135,11 @@ const FR_EVIDENCE: Record<string, { title: string; summary: string; source?: str
   'nexus-press': { title: 'Communiqué de presse sur le Calvexin', summary: '« Aucun décès lié au traitement n’a été observé. » Champ Company des métadonnées : Blackwell Diligence.' },
   'archive-db': { title: 'Image de la base d’archives de Nexus', summary: 'Le journal d’audit enregistre la suppression des EI 2291-2293 par k.dressler. Les factures à Blackwell Diligence totalisent 230 000.', source: 'Mission m03' },
   'registry-hollin': { title: 'Fiche du registre : Hollin Trust', summary: 'Contrôle Blackwell Holdings, Orion Security et Lindgate Advisory.' },
-  'report-halden': { title: 'Résumé d’Orion : Halden Freight', summary: 'Désigne le contractuel c-0031. Signé S. Reik.' },
-  'report-brask': { title: 'Résumé d’Orion : Brask Utilities', summary: 'Désigne le contractuel c-0041. Signé S. Reik.' },
-  'gramtele-meta': { title: 'Export de métadonnées de Gramtele', summary: 'Trois appareils se connectent en tant que NULL. La table des contractuels liste six clôtures et la vôtre, déjà prévue.', source: 'Transmis via Gramtele' },
+  'report-halden': { title: 'Résumé d’Orion : Halden Freight', summary: 'Désigne le prestataire c-0031. Signé S. Reik.' },
+  'report-brask': { title: 'Résumé d’Orion : Brask Utilities', summary: 'Désigne le prestataire c-0041. Signé S. Reik.' },
+  'gramtele-meta': { title: 'Export de métadonnées de Gramtele', summary: 'Trois appareils se connectent en tant que NULL. La table des prestataires liste six clôtures et la vôtre, déjà prévue.', source: 'Transmis via Gramtele' },
 };
 
-type Flags = GameState['flags'];
-
-const FR_ENDINGS: Record<EndingId, { title: string; epigraph: string; paragraphs: (f: Flags) => string[] }> = {
-  record: {
-    title: 'Le dossier public',
-    epigraph: 'Les archives publiques appartiennent au public.',
-    paragraphs: (f) => [
-      'Maud Ferreira a lu votre dossier cette nuit-là, et tous les hashs correspondaient. Elle a publié onze jours plus tard, les noms privés masqués et les lignes d’audit au complet.',
-      'Nexus Labs a publié un communiqué, puis un second. Le régulateur a ouvert un dossier sur NX-417. Deux familles ont reçu des lettres qui auraient dû être écrites en 2025.',
-      f.gave_location || f.gave_echo_to_moth
-        ? 'Elin Maret ne l’a pas vu. Elle avait déménagé deux fois encore, à cause de ce que vous aviez déjà livré, et quand les Archives lui ont écrit, le relais qu’elle utilisait depuis un an est resté muet. Votre dossier en a fait un témoin, et vous savez qui l’a rendue facile à trouver.'
-        : 'Un journal l’a citée comme source dans le mois, contre sa volonté. Elin Maret a quand même témoigné, d’une voix simple et exacte, puis elle est repartie vers un endroit avec un lac.',
-      f.vanta_helps
-        ? 'Votre formulaire de clôture a disparu pendant neuf jours, ce qui a suffi. Sanna Reik a démissionné d’Orion avant qu’on le lui demande, et a fait une déclaration qui n’épargnait personne, elle comprise.'
-        : 'Le résumé d’Orion portant votre numéro a été déposé le 5 novembre, une semaine trop tard pour être cru. Il a quand même fallu deux avocats et presque un an pour le faire disparaître.',
-      'Gramtele a perdu un tiers de ses pseudonymes en une semaine. Les autres sont restés. C’était toujours l’endroit le plus simple pour trouver quelqu’un capable de poser une bonne question.',
-    ],
-  },
-  custody: {
-    title: 'La garde',
-    epigraph: 'Ce choix m’a déjà été retiré une fois.',
-    paragraphs: (f) => [
-      'Vous avez envoyé le dossier scellé à un relais qui répondait à l’aube. Puis vous avez attendu, ce que vous faisiez très mal.',
-      'Elin Maret a mis sept semaines. Elle a trouvé une avocate qui ne s’est pas dérobée, et un inspecteur du régulateur que le 40e jour d’administration inquiétait déjà. Elle y est allée un mardi, sous son propre nom, avec son propre export et vos hashs.',
-      f.gave_location || f.gave_echo_to_moth
-        ? 'Elle n’a jamais dit qu’elle vous pardonnait ce que vous aviez livré avant. Son dernier message disait seulement : « Reçu. Vérifié. » Vous avez compris que c’était le plus qu’elle pouvait donner, et plus que ce à quoi vous aviez droit.'
-        : 'Son dernier message tenait en une ligne de base64. Vous l’avez décodée à la main, pour le plaisir. Elle disait : merci de l’avoir laissé de côté.',
-      'Cela n’est pas devenu un scandale. C’est devenu une enquête lente, une licence retirée et un règlement discret. Blackwell existe toujours, sous un autre nom, et vous vérifiez toujours à qui appartiennent les choses.',
-      f.vanta_helps
-        ? 'Votre formulaire de clôture a disparu, et personne n’a jamais déposé de rapport portant votre numéro. Vous ne savez pas qui remercier, et vous ne le feriez pas.'
-        : 'Un rapport portant votre numéro a bien paru. Il a fallu longtemps pour montrer qu’il était faux. Vos hashs ont aidé.',
-    ],
-  },
-  leverage: {
-    title: 'Le moyen de pression',
-    epigraph: 'Le monde reste exactement aussi mauvais, mais nous, on en est sortis.',
-    paragraphs: (f) => [
-      'MOTH a tenu parole. En un mois, il n’y avait plus de date de clôture, plus de rapport, plus de poste de travail. Une nouvelle identité est arrivée par la poste, avec un compte en banque assez garni pour être insultant.',
-      'Personne n’est allé en prison. NX-417 est resté en l’état. Le Calvexin a obtenu sa licence au printemps suivant, vous avez lu le communiqué, puis vous avez cessé de lire les communiqués.',
-      f.gave_echo_to_moth
-        ? 'Vous aviez aussi donné à MOTH les habitudes d’Elin. Un matin, sans raison, vous avez regardé son relais : il avait disparu. Vous ne saurez jamais si c’était son choix.'
-        : 'Elin Maret a gardé sa copie de l’export d’audit. Quelque part, elle cherche encore quelqu’un qui voudra bien le lire. Vous pourriez lui écrire. Vous y avez pensé.',
-      'Six mois plus tard, un message est arrivé sur un compte que personne n’aurait dû connaître. « je le garde toujours », disait-il, avec un papillon de nuit. « juste un petit service. » Vous commencez à comprendre comment ont débuté les gens de ce bureau.',
-    ],
-  },
-  seat: {
-    title: 'La place',
-    epigraph: 'Vous avez posé une bonne question sur le canal ouvert.',
-    paragraphs: (f) => [
-      'Le contrat faisait deux pages. Le salaire était réel. On vous a donné un nouvel appareil et, le premier du mois, on vous a ajouté à un roulement. Vous étiez doué pour cela. On vous avait bien formé.',
-      'La date de clôture sur votre ligne a été remplacée par celle de quelqu’un d’autre. Vous n’avez pas regardé de qui.',
-      f.read_notes41
-        ? 'C’est vous qui avez effacé le dossier personnel de l’ancienne image du poste. Vous avez d’abord cherché les fichiers cachés. Vous avez trouvé la note, vous l’avez gardée, et vous ne savez pas pourquoi.'
-        : 'Quelqu’un a effacé le dossier personnel de votre ancienne image de poste. Elle est retournée dans le lot.',
-      'C’est une soirée calme. Un nouveau pseudonyme a posé une question pointue sur le canal ouvert : pourquoi une réponse en cache survit à son enregistrement. Vous ouvrez une conversation. Vous n’êtes plus {handle}. Vous tapez comme on vous l’a appris : ponctuation correcte, sans vous presser.',
-      '« Bonsoir. Vous avez posé une bonne question. La plupart des gens ne demandent pas pourquoi. »',
-    ],
-  },
-  ghost: {
-    title: 'Fantôme',
-    epigraph: 'La réputation est la seule chose que possède un pseudonyme.',
-    paragraphs: (f) => [
-      'Vous avez fermé le compte. Vous avez effacé ce que vous pouviez, et vous avez été honnête avec vous-même sur ce que cela représentait. Vous avez pris le bus vers un endroit où vous n’étiez jamais allé et, pendant un temps, vous avez regardé chaque voiture.',
-      'Votre date de clôture est passée. Un rapport a paru avec votre numéro de contractuel, et il ne désignait personne, car personne n’avait jamais connu votre nom. L’anonymat s’est révélé utile pour une seule chose.',
-      f.sealed_kept ? 'Vous avez encore une archive scellée sur un disque, dans un tiroir.' : 'Vous n’avez rien gardé, ce qui vous a semblé sage sur le moment.',
-      'NX-417 est resté en l’état. Quelque part, un nouveau contractuel lit une note dans un fichier caché, écrite par quelqu’un qui est allé plus loin que vous. Vous n’en avez pas laissé. Vous y pensez plus que vous ne l’auriez cru.',
-    ],
-  },
-};
-
-function endingEntries(out: Entry[]) {
-  const names = ['gave_location', 'gave_echo_to_moth', 'vanta_helps', 'read_notes41', 'sealed_kept'];
-  for (const id of Object.keys(ENDINGS) as EndingId[]) {
-    const en = ENDINGS[id];
-    const fr = FR_ENDINGS[id];
-    out.push([en.title, fr.title], [en.epigraph, fr.epigraph]);
-    for (let bits = 0; bits < 1 << names.length; bits++) {
-      const flags: Flags = {};
-      names.forEach((n, i) => { flags[n] = Boolean(bits & (1 << i)); });
-      const a = en.paragraphs({ flags } as GameState);
-      const b = fr.paragraphs(flags);
-      a.forEach((line, i) => out.push([line, b[i]]));
-    }
-  }
-}
 
 export function missionEntries(): Entry[] {
   const out: Entry[] = [];
@@ -236,6 +153,5 @@ export function missionEntries(): Entry[] {
   zip(SKILL_NODES, FR_NODES, out);
   zip(ACHIEVEMENTS, FR_ACHIEVEMENTS, out);
   zip(EVIDENCE, FR_EVIDENCE, out);
-  endingEntries(out);
   return out;
 }

@@ -397,3 +397,9 @@
   .msg-actions .icon-btn:last-of-type:not(.on) { display: none; }
   .chat-tools .icon-btn:nth-child(2) { display: none; }
 }
+
+.standing-table { list-style: none; margin: 8px 0 0; padding: 0; counter-reset: standing; font-size: 13px; }
+.standing-table li { display: flex; justify-content: space-between; gap: 12px; padding: 5px 8px; border-radius: 6px; counter-increment: standing; }
+.standing-table li > span:first-child::before { content: counter(standing) ". "; color: var(--muted, inherit); }
+.standing-table li.me { background: var(--amber-soft); font-weight: 650; }
+.standing-table small { font-weight: 400; }

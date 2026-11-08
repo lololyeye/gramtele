@@ -1,3 +1,4 @@
+import { rankOf } from '../../data/reputation';
 import { useRef, useState } from 'react';
 import { LANGUAGES, Language, LanguagePref, tr } from '../../i18n';
 import { Icon } from '../components/Icon';
@@ -128,6 +129,7 @@ export function InventoryView() {
   const s = useSession();
   const g = s.engine;
   const st = g.state;
+  const rank = rankOf(st.standing);
   const available = st.tools.filter((t) => TOOLKITS[t]);
   const fs = g.fileSystem('workbench');
   const list = (dir: string) => {
@@ -141,6 +143,7 @@ export function InventoryView() {
       <dl className="ledger">
         <div><dt>{tr('Credits')}</dt><dd>{st.credits}</dd></div>
         <div><dt>{tr('Standing')}</dt><dd>{st.standing}</dd></div>
+        <div><dt>{tr('Rank')}</dt><dd>{tr(rank.title)}{rank.next !== null && <small className="rank-next">{tr('{n} more to {rank}', { n: rank.next - st.standing, rank: tr(rankOf(rank.next).title) })}</small>}</dd></div>
         <div><dt>{tr('Contractor id')}</dt><dd className="mono">c-0047</dd></div>
         <div><dt>{tr('Workbench')}</dt><dd className="mono">10.40.0.47</dd></div>
       </dl>

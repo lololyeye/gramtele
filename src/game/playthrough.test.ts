@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest';
 import type { EndingId, ThreadId } from './types';
 import { GameEngine, newState, levelFor } from './engine';
 import { SaveStore, validateSave } from './persistence';
+import { rankOf, standingOf, tableFor } from '../data/reputation';
+import { tr } from '../i18n';
 
 /** Plays the whole game through the same API the interface uses. */
 class Player {
@@ -91,9 +93,9 @@ async function playToFinale(gaveLocation: boolean): Promise<Player> {
   p.settle();
   expect(p.g.choicesFor('ECHO')?.choices.map((c) => c.id)).toEqual(['what']);
   p.g.takeAttachment('ECHO', p.g.state.threads.ECHO.messages[0].id);
-  expect(await p.run('base64 -d ~/Downloads/fragment_01.txt')).toMatch(/^(do you know what you looked for|sais-tu ce que tu cherchais)$/);
+  expect(await p.run('base64 -d ~/Downloads/fragment_01.txt')).toMatch(/^(do you know what you looked for|savez-vous ce que vous cherchiez)$/);
   p.say('ECHO', 'decoded');
-  expect(p.g.state.threads.ECHO.messages.at(-1)?.text).toContain(gaveLocation ? 'garden' : 'why');
+  expect(p.g.state.threads.ECHO.messages.at(-1)?.text).toBe(gaveLocation ? '§e1_gave.m.1' : '§e1_withheld.m.1');
 
   // M3
   p.say('NULL', 'accept');
@@ -119,7 +121,7 @@ async function playToFinale(gaveLocation: boolean): Promise<Player> {
   expect(p.g.state.flags.saw_maret_export).toBe(true);
   p.say('VANTA', 'share');
   p.settle();
-  expect(p.g.state.threads.NULL.messages.at(-1)?.text).toContain('deleted entries');
+  expect(p.g.state.threads.NULL.messages.at(-1)?.text).toBe('§n3_done.m.2');
   p.say('NULL', 'noticed');
 
   // M4
@@ -193,6 +195,104 @@ async function finaleUntilSealed(p: Player) {
   p.settle();
 }
 
+describe('the scene remembers', () => {
+  it('moves the player up the table through work, and banter never holds anything up', async () => {
+    const p = await playToFinale(false);
+    p.settle();
+    const st = p.g.state;
+    expect(st.flags['clean:m01']).toBe(true);
+    expect(st.standing).toBeGreaterThan(460);
+    for (const who of ['ostrich_farm', 'ROOTLESS', 'tinsel', 'kelpie']) expect(st.flags[`passed:${who}`], who).toBe(true);
+    expect(st.flags['passed:NULL']).toBeUndefined();
+    const table = tableFor(st);
+    expect(table[0].handle).toBe('NULL');
+    expect(table.find((r) => r.me)?.standing).toBe(st.standing);
+    // #lowlight kept talking although nobody answered it.
+    const fired = st.firedBeats;
+    for (const b of ['lg_hello', 'lg_m1', 'lg_kelpie_flex', 'lg_m2', 'lg_duel', 'lg_db', 'lg_group_by', 'lg_race', 'lg_race_won', 'lg_ttl', 'lg_m4']) expect(fired, b).toContain(b);
+    expect(st.pendingChoices.filter((c) => c.thread === 'lowlight').length).toBeLessThanOrEqual(1);
+    // People use the name once it means something.
+    expect(tr(st.threads.lowlight.messages.find((m) => m.text === '§lg_race.m.0')!.text)).toContain('tester');
+    expect(rankOf(st.standing).title).not.toBe('Nobody');
+  }, 30000);
+
+  it('lets the player expose kelpie only after really decoding the invoice', async () => {
+    const p = new Player();
+    p.g.signUp('tester');
+    p.g.state.flags.n2_closed = true;
+    p.settle();
+    const av = () => p.g.choicesFor('lowlight')?.choices.map((c) => c.id);
+    expect(av()).toEqual(['pass']);
+    p.g.apply([{ tool: 'forensics' }]);
+    const file = p.g.state.threads.lowlight.messages.find((m) => m.attachment?.name === 'kelpie_invoice.b64')!;
+    p.g.takeAttachment('lowlight', file.id);
+    const decoded = await p.run('base64 -d ~/Downloads/kelpie_invoice.b64');
+    expect(decoded).toMatch(/40 CREDITS/);
+    p.settle();
+    expect(av()).toEqual(['expose', 'pass']);
+    const before = { me: p.g.state.standing, kelpie: standingOf('kelpie', p.g.state.flags) };
+    p.say('lowlight', 'expose');
+    expect(p.g.state.standing).toBe(before.me + 40);
+    expect(standingOf('kelpie', p.g.state.flags)).toBe(before.kelpie - 60);
+    expect(p.g.state.achievements).toContain('receipts');
+  });
+
+  it('rewards getting DNS right against MOTH, and teaches it either way', () => {
+    for (const pick of ['ttl', 'agree']) {
+      const p = new Player();
+      p.g.signUp('tester');
+      p.g.state.missions.m04 = { status: 'active', objectives: ['dns'], optionals: [], answers: {}, wrong: [], hints: {}, commands: 0 };
+      p.settle();
+      p.say('lowlight', pick);
+      expect(!!p.g.state.flags.corrected_moth).toBe(pick === 'ttl');
+      expect(tr(p.g.state.threads.lowlight.messages.at(pick === 'ttl' ? -3 : -2)!.text).length).toBeGreaterThan(10);
+      if (pick === 'agree') expect(tr('§lg_ttl.c.agree.then.0')).toContain('TTL');
+    }
+  });
+
+  it('heckles visible mistakes on the first job, without blocking it', async () => {
+    const p = new Player();
+    p.g.signUp('tester');
+    p.say('NULL', 'firm');
+    p.say('NULL', 'accept');
+    for (let i = 0; i < 4; i++) await p.run('cat /nowhere');
+    p.settle();
+    expect(p.g.state.firedBeats).toContain('lg_fails');
+    expect(p.g.state.activeMission).toBe('m01');
+  });
+
+  it('answers off-script messages according to standing', () => {
+    const p = new Player();
+    p.g.signUp('tester');
+    p.settle();
+    p.g.state.threads.lowlight = { messages: [], unread: 0, archived: false, visible: true };
+    p.g.sendMessage('lowlight', 'hello everyone');
+    p.settle();
+    expect(p.g.state.threads.lowlight.messages.at(-1)!.text).toBe('§small.lowlight.low.0');
+    p.g.state.standing = 500;
+    p.g.sendMessage('lowlight', 'hello again');
+    p.settle();
+    expect(p.g.state.threads.lowlight.messages.at(-1)!.text).toMatch(/^§small\.lowlight\.high\./);
+  });
+
+  it('brings old saves forward: finished work counts, missed chatter stays missed', () => {
+    const old = newState();
+    old.version = 1;
+    old.handle = 'veteran';
+    old.flags = { signed_up: true, n0_talked: true, n1_closed: true };
+    old.standing = 10;
+    old.firedBeats = ['n0_hello', 'n1_offer', 'lg_hello', 'n1_done', 'v1_request'];
+    old.missions.m01 = { status: 'done', objectives: [], optionals: [], answers: {}, wrong: [], hints: {}, commands: 0 };
+    old.threads.NULL = { messages: [{ id: 1, from: 'NULL', text: 'Received. Forty credits released.', at: 0 }], unread: 0, archived: false, visible: true, pinned: true };
+    const g = new GameEngine(old);
+    expect(g.state.version).toBe(2);
+    expect(g.state.standing).toBe(60);
+    expect(g.state.flags['clean:m01']).toBe(true);
+    expect(g.state.firedBeats).toContain('lg_m1');
+    expect(g.state.pendingMessages.filter((m) => m.thread === 'lowlight')).toEqual([]);
+  });
+});
+
 describe('full playthrough', () => {
   it('reaches the Archive ending from a real curl upload', async () => {
     const p = await playToFinale(false);
@@ -218,6 +318,12 @@ describe('full playthrough', () => {
     const q = await playToFinale(false);
     await finaleUntilSealed(q);
     q.say('NULL', 'later');
+    // Having read the sessions table, the player can finally ask NULL the question nobody asks.
+    const before = q.g.state.standing;
+    q.say('NULL', 'which');
+    expect(q.g.state.flags.mogged_null).toBe(true);
+    expect(q.g.state.standing).toBe(before + 40);
+    expect(q.g.state.achievements).toContain('asked_null');
     q.say('NULL', 'seat');
     expect(q.g.state.ending).toBe<EndingId>('seat');
 

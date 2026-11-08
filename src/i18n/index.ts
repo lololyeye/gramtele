@@ -17,6 +17,51 @@ type Catalog = Map<string, string>;
 const catalogs: Partial<Record<Language, Catalog>> = {};
 let current: Language = 'en';
 
+// ---------- written lines ----------
+
+/**
+ * Everything characters say lives in one dataset per language, written separately and reached by key.
+ * A line is never derived from another language, and a missing one is never replaced by another language:
+ * it fails loudly while developing and shows a visible marker in production. See docs/LOCALIZATION.md.
+ */
+export const LINE = '§';
+const lineSets: Partial<Record<Language, Catalog>> = {};
+let lineVars: Record<string, string> = {};
+const reported = new Set<string>();
+
+export function registerLines(lang: Language, lines: Map<string, string>): void {
+  lineSets[lang] = lines;
+}
+
+/** Values for the {placeholders} characters use, such as the player's handle. */
+export function setLineVars(vars: Record<string, string>): void {
+  lineVars = vars;
+}
+
+export const isLine = (text: string): boolean => text.startsWith(LINE);
+export const lineKey = (key: string): string => `${LINE}${key}`;
+
+/** The raw line in a given language, or null when that language does not have it. */
+export function lineIn(lang: Language, text: string): string | null {
+  return lineSets[lang]?.get(text.slice(LINE.length)) ?? null;
+}
+
+export function lineKeys(lang: Language): string[] {
+  return [...(lineSets[lang]?.keys() ?? [])];
+}
+
+function fillLine(text: string): string {
+  const found = lineIn(current, text);
+  if (found !== null) return found;
+  const message = `Missing ${current} line: ${text.slice(LINE.length)}`;
+  if (import.meta.env?.DEV || import.meta.env?.MODE === 'test') throw new Error(message);
+  if (!reported.has(text)) {
+    reported.add(text);
+    console.error(message);
+  }
+  return `[${current}: ${text.slice(LINE.length)}]`;
+}
+
 export function registerCatalog(lang: Language, entries: Iterable<[string, string]>): void {
   const c = (catalogs[lang] ??= new Map());
   for (const [k, v] of entries) c.set(k, v);
@@ -35,13 +80,15 @@ export function localeTag(): string {
 }
 
 export function hasTranslation(text: string, lang: Language): boolean {
-  return catalogs[lang]?.has(text) ?? false;
+  return isLine(text) ? lineIn(lang, text) !== null : (catalogs[lang]?.has(text) ?? false);
 }
 
-/** Translates a source string. Unknown strings, like what the player typed, pass through. */
+/** Interface and mission strings go through the catalog. Unknown strings, like what the player typed, pass through. Lines come from their own dataset. */
 export function tr(text: string, vars?: Record<string, string | number>): string {
-  let out = current === 'en' ? text : (catalogs[current]?.get(text) ?? text);
-  if (vars) out = out.replace(/\{(\w+)\}/g, (m, k: string) => (k in vars ? String(vars[k]) : m));
+  const line = isLine(text);
+  let out = line ? fillLine(text) : current === 'en' ? text : (catalogs[current]?.get(text) ?? text);
+  const all = line ? { ...lineVars, ...vars } : vars;
+  if (all) out = out.replace(/\{(\w+)\}/g, (m, k: string) => (k in all ? String(all[k]) : m));
   return out;
 }
 

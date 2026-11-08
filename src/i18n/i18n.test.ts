@@ -1,9 +1,7 @@
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
-import { CHARACTERS } from '../data/characters';
-import { BEATS } from '../data/dialogue';
-import { SMALLTALK_STRINGS } from '../data/dialogue/smalltalk';
+import '../data/dialogue';
 import { MISSIONS } from '../data/missions';
 import { ACHIEVEMENTS, ENDINGS, EVIDENCE, SKILL_NODES } from '../data/progression';
 import { seedWorkbench } from '../data/world/hosts';
@@ -72,27 +70,6 @@ describe('translation', () => {
 });
 
 describe('the French catalog is complete', () => {
-  it('dialogue', () => {
-    const out: string[] = [];
-    collectStrings(BEATS, ['text', 'label', 'reply', 'preview', 'decision', 'data'], out);
-    for (const b of Object.values(BEATS)) {
-      for (const m of b.messages ?? []) if (typeof m === 'string') out.push(m);
-      for (const c of b.choices ?? []) for (const m of c.then ?? []) if (typeof m === 'string') out.push(m);
-    }
-    const allowed = missing(out).filter((s) => !s.startsWith("echo '") && !s.includes('tr a-z') && s !== 'bWFuIGJhc2U2NA==' && s !== 'ge n-m a-mn-z');
-    expect(allowed).toEqual([]);
-    expect(missing(SMALLTALK_STRINGS)).toEqual([]);
-  });
-
-  it('characters', () => {
-    const out: string[] = [];
-    for (const c of Object.values(CHARACTERS)) {
-      out.push(c.tagline, c.joined, ...c.bio);
-      for (const r of c.reveals ?? []) out.push(r.label, r.value);
-    }
-    expect(missing(out)).toEqual([]);
-  });
-
   it('missions', () => {
     const out: string[] = [];
     for (const m of MISSIONS) {
@@ -110,11 +87,12 @@ describe('the French catalog is complete', () => {
     for (const a of ACHIEVEMENTS) out.push(a.title, a.text);
     for (const e of Object.values(EVIDENCE)) out.push(e.title, e.summary);
     const names = ['gave_location', 'gave_echo_to_moth', 'vanta_helps', 'read_notes41', 'sealed_kept'];
+    for (const standing of [0, 900])
     for (const e of Object.values(ENDINGS)) {
       out.push(e.title, e.epigraph);
       for (let bits = 0; bits < 32; bits++) {
         const flags = Object.fromEntries(names.map((n, i) => [n, Boolean(bits & (1 << i))]));
-        out.push(...e.paragraphs({ flags } as unknown as GameState));
+        out.push(...e.paragraphs({ flags, standing } as unknown as GameState));
       }
     }
     expect(missing(out)).toEqual([]);

@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { CHARACTERS } from '../../data/characters';
+import { tableFor } from '../../data/reputation';
 import { presenceOf } from '../../game/presence';
 import { tr } from '../../i18n';
 import type { ThreadId } from '../../game/types';
@@ -80,6 +81,21 @@ export function DetailsPanel({ thread, onClose, onFocusMessage, onSearch }: { th
             <dl className="kv stacked">
               {notes.map((r) => <div key={r.flag}><dt>{tr(r.label)}</dt><dd>{tr(r.value)}</dd></div>)}
             </dl>
+          </section>
+        )}
+
+        {c.kind === 'group' && (
+          <section className="details-block">
+            <h4>{tr('The table')}</h4>
+            <p className="muted">{tr('Kept by ostrich_farm. Everyone says they do not read it.')}</p>
+            <ol className="standing-table">
+              {tableFor(st).map((row) => (
+                <li key={row.handle} className={row.me ? 'me' : undefined}>
+                  <span>{row.handle}{row.me && <small> {tr('(you)')}</small>}</span>
+                  <span className="mono">{row.standing}</span>
+                </li>
+              ))}
+            </ol>
           </section>
         )}
 

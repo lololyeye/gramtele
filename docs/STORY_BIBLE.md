@@ -31,11 +31,19 @@ The player (contractor id **c-0047**, chosen handle) joins Gramtele and is recru
 - False lead: `quietfern` on gamersden.test is a teenager (Tomas), unrelated.
 
 ## Voices
-- **NULL**: correct punctuation, few contractions; dry, courteous, never hurries. Night-shift Brandt slips: "ok", missing full stops.
-- **VANTA**: warm, teacherly, questions and shorthand, fragments, "ok so". Hates sloppy notes.
-- **MOTH**: chatty, ellipses, jokes that stop being funny, offers trades.
-- **ROOTLESS**: all lowercase, no punctuation except dashes, gallows humour.
-- **ECHO**: encoded fragments (base64, rot13, hex), then plain exact sentences of someone used to writing protocols.
+Full profiles, in both languages, are in `docs/VOICES.md`. In short:
+- **NULL**: the elitist. Correct punctuation, few contractions; dry, courteous, never hurries, rarely praises. Night-shift Brandt slips: "ok", lower case, missing full stops.
+- **VANTA**: the wealthy operator. Warm, charming, insufferable; shorthand, fragments, "ok so", "cute". Flexes hardware and money, hates sloppy notes. Sanna Reik's Orion income is what pays for it.
+- **MOTH**: the sarcastic intellectual. Long correct sentences, trailing ellipses when baiting, corrects people for pleasure, offers trades.
+- **ROOTLESS**: the loud rival in public, the bitter ex-contractor in private. Lowercase, dashes, CAPS, absurd insults, gallows humour. Once 812 on the table.
+- **ECHO**: encoded fragments (base64, rot13, hex), then plain exact sentences of someone used to writing protocols. Three public posts in a year, three retractions: standing 40, and people still listen.
+
+## The scene
+`#lowlight` is the public stage: NULL, VANTA, MOTH and ROOTLESS all post there, alongside tinsel (rule-lawyer), kelpie (claims big day rates, invoices say otherwise) and ostrich_farm (keeps the table, owns actual ostriches).
+
+**The table** is standing, public, and matches the accounts table in the metadata export: NULL 940, VANTA 870, MOTH 610, kelpie 410, tinsel 230, ROOTLESS 120, ostrich_farm 88, ECHO 40. The player starts at 0. Standing comes from missions, from how they were done (no hints, every discovery, a report right first time) and from public moments: exposing kelpie's invoice, correcting MOTH on TTLs. A clean player can pass MOTH. Nobody passes NULL.
+
+Standing is the trap: Blackwell funds Gramtele and built the scale, and a notorious contractor makes a more believable culprit.
 
 ## Timeline
 2017 Orion founded. 2018 Elin joins Nexus. 2023 Blackwell funds Gramtele. 2024 Hollin buys Orion; Halden Freight. 2025-03 deletions, invoice, Elin leaves. 2025 Brask. 2026-05 Lindgate registered.

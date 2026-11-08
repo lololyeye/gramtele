@@ -112,7 +112,7 @@ export const M01: Mission = {
       skill: 'linux',
     },
   ],
-  rewards: { xp: 40, credits: 40, standing: 10 },
+  rewards: { xp: 40, credits: 40, standing: 40 },
   review: {
     accomplished: 'You oriented yourself on an unfamiliar Linux system, located a file with a real search rather than guessing, and read configuration straight from the source.',
     concepts: ['Absolute and relative paths', 'Users, uids and permissions', 'find with -name', 'Redirection with >', 'Hidden files'],
@@ -294,7 +294,7 @@ export const M02: Mission = {
       },
     ],
   },
-  rewards: { xp: 60, credits: 80, standing: 15 },
+  rewards: { xp: 60, credits: 80, standing: 110 },
   review: {
     accomplished: 'From a single handle you built an identity, an employment history and a location, you rejected a false match, and you stated the limits of what you knew.',
     concepts: ['Search operators', 'Username correlation and collisions', 'Document and image metadata', 'Corroboration', 'Timeline reconstruction'],
@@ -474,7 +474,7 @@ export const M03: Mission = {
       },
     ],
   },
-  rewards: { xp: 80, credits: 120, standing: 15 },
+  rewards: { xp: 80, credits: 120, standing: 140 },
   review: {
     accomplished: 'You mapped an unknown schema, joined across tables, aggregated payments, and found a discrepancy between a database and its own audit trail.',
     concepts: ['Schemas, primary and foreign keys', 'SELECT, WHERE, ORDER BY', 'JOIN', 'GROUP BY and SUM', 'Audit trails and data integrity', 'Least privilege, separation of duties'],
@@ -666,7 +666,7 @@ export const M04: Mission = {
       },
     ],
   },
-  rewards: { xp: 90, credits: 150, standing: 20 },
+  rewards: { xp: 90, credits: 150, standing: 170 },
   review: {
     accomplished: 'You located yourself on a network, mapped a target from public DNS and service data, read TLS and HTTP headers, and turned scattered records into an architecture statement.',
     concepts: ['IP, CIDR and routing', 'DNS record types', 'TCP, UDP and ports', 'Open, closed and filtered', 'HTTP status and headers', 'TLS certificates', 'robots.txt'],

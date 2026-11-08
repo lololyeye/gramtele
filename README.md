@@ -36,6 +36,8 @@ Chaque mission se termine par une revue : ce que tu as fait, pourquoi la méthod
 
 **Cinq fins.** Tes choix comptent : ce que tu transmets, ce que tu tais et à qui tu fais confiance changent la manière dont l'histoire se conclut.
 
+**Une scène, pas un décor.** Sur Gramtele, tout le monde a un ego et quelque chose à prouver. Au début, tu n'es personne et on te le fait savoir. Le classement bouge avec ce que tu fais vraiment : une mission sans indice, une facture décodée et lue devant tout le monde, MOTH repris sur le fonctionnement du TTL. Les gens apprennent ton pseudo, changent de ton et finissent par devoir admettre qu'ils se sont trompés. Reste à savoir à qui ça sert, que ton nom pèse.
+
 ![Une conversation sur Gramtele](docs/screens/gramtele.png)
 
 ## Dans le jeu
@@ -44,7 +46,8 @@ Chaque mission se termine par une revue : ce que tu as fait, pourquoi la méthod
 - **Vraies requêtes SQL** : SQLite tourne en WebAssembly. Les bases de preuves sont en lecture seule.
 - **Internet simulé** : `dig`, `nmap`, `curl`, `whois`, `traceroute`, un navigateur intégré et une carte qui grandit avec tes découvertes.
 - **Gramtele** : une vraie messagerie à trois colonnes. Bulles groupées, accusés de lecture, réactions, épingles, recherche, pièces jointes, cartes de mission, messages libres et réponses suggérées, profils que tu complètes en enquêtant.
-- **Deux langues** : tout le jeu existe en français et en anglais, de l'histoire aux pages de manuel. La langue suit ton navigateur et se change dans les réglages.
+- **Réputation** : un classement public, des rangs, et un milieu qui te répond différemment selon ce que tu as prouvé.
+- **Deux langues** : les dialogues sont écrits séparément en français et en anglais, avec les mêmes choix et les mêmes indices, sans traduction automatique. La langue suit ton navigateur et se change dans les réglages.
 - **Progression** : les compétences s'obtiennent en les démontrant, pas en les achetant.
 - **Sauvegardes** : automatique, trois emplacements, export et import.
 - **Confort** : tout au clavier, adapté au mobile, mouvement réduit, taille de texte réglable, son optionnel et coupé par défaut.
@@ -78,16 +81,18 @@ npm run dev
 | `npm run dev` | Serveur de développement |
 | `npm test` | Tests, dont une partie complète jouée de bout en bout |
 | `npm run build` | Vérification des types et build de production |
+| `npm run i18n:check` | Lignes manquantes, indices qui divergent et voix des personnages, dans les deux langues |
 
 ## Organisation du code
 
 ```
 src/
   game/   moteur sans React : shell, système de fichiers, réseau virtuel, SQL, sauvegardes
-  data/   contenu : missions, dialogues, sites, bases de données
+  data/   contenu : missions, sites, bases de données
+    dialogue/  script.ts (la logique), en.ts et fr.ts (les textes, écrits séparément)
   ui/     interface React : messagerie, vues, styles
-  i18n/   langues : détection, catalogue français écrit à la main
-docs/     bible de l'histoire (attention, elle dévoile tout)
+  i18n/   langues : détection, catalogue français de l'interface et des missions
+docs/     bible de l'histoire (attention, elle dévoile tout), voix des personnages, localisation
 ```
 
 Construit avec React, TypeScript, Vite et [sql.js](https://github.com/sql-js/sql.js).

@@ -8,7 +8,7 @@ export const FR_M01 = {
   title: 'Une présentation discrète',
   requires: ['Rien. Si vous savez taper au clavier, vous pouvez commencer.'],
   intro: [
-    'NULL vous a confié une machine : un poste de travail de contractuel, accessible par un terminal. Avant de payer qui que ce soit, Lindgate veut savoir si cette personne se repère sur une machine Linux sans qu’on lui tienne la main.',
+    'NULL vous a confié une machine : un poste de travail de prestataire, accessible par un terminal. Avant de payer qui que ce soit, Lindgate veut savoir si cette personne se repère sur une machine Linux sans qu’on lui tienne la main.',
     'Confirmez qui vous êtes sur le système, trouvez le document d’accueil, lisez vos réglages de relais et laissez un reçu.',
   ],
   concepts: [
@@ -18,7 +18,7 @@ export const FR_M01 = {
   ],
   resources: ['Terminal', 'man COMMANDE pour chaque outil', 'hint, si vous bloquez'],
   environment: 'Image du poste de travail, votre dossier personnel dans /home/player. Dossier de mission dans /missions/m01.',
-  files: [{ file: { data: `MISSION m01 - PRISE EN MAIN DU POSTE DE TRAVAIL\nContact : NULL\n\n1. Confirmez votre identifiant numérique d'utilisateur. (whoami, id)\n2. Placez-vous dans ce dossier de mission et listez-le.\n3. Trouvez intake.txt. Il se trouve quelque part sous /home. Ne le cherchez pas\n   à la main. Apprenez à utiliser "find".\n4. Lisez les réglages de relais indiqués par le document d'accueil, puis déposez\n   votre référence de contractuel et l'hôte du relais amont avec "submit".\n5. Laissez un reçu : créez le dossier ~/cases/m01 et, dedans, un fichier\n   receipt.txt contenant votre référence de contractuel.\n` } }],
+  files: [{ file: { data: `MISSION m01 - PRISE EN MAIN DU POSTE DE TRAVAIL\nContact : NULL\n\n1. Confirmez votre identifiant numérique d'utilisateur. (whoami, id)\n2. Placez-vous dans ce dossier de mission et listez-le.\n3. Trouvez intake.txt. Il se trouve quelque part sous /home. Ne le cherchez pas\n   à la main. Apprenez à utiliser "find".\n4. Lisez les réglages de relais indiqués par le document d'accueil, puis déposez\n   votre référence de prestataire et l'hôte du relais amont avec "submit".\n5. Laissez un reçu : créez le dossier ~/cases/m01 et, dedans, un fichier\n   receipt.txt contenant votre référence de prestataire.\n` } }],
   objectives: {
     identity: {
       text: 'Identifiez l’utilisateur courant et déposez votre uid numérique.',
@@ -37,20 +37,20 @@ export const FR_M01 = {
       hints: ['find prend un dossier de départ et un test. man find liste les tests.', 'Utilisez le test -name avec le nom du fichier, à partir de /home.', 'find /home -name "intake.txt" puis cat sur le chemin affiché.'],
     },
     config: {
-      text: 'Lisez la configuration du relais. Déposez votre référence de contractuel et l’hôte amont.',
+      text: 'Lisez la configuration du relais. Déposez votre référence de prestataire et l’hôte amont.',
       note: 'Les fichiers de configuration en disent souvent plus sur un système que sa documentation.',
-      answer: { prompt: 'Votre référence de contractuel', wrong: 'Ce n’est pas ce que dit la configuration active. Un brouillon périmé traîne sur cette machine : vérifiez quel fichier vous avez lu.', right: 'Notez que vous l’avez lue dans la configuration active, pas dans le brouillon posé à côté du document d’accueil.' },
+      answer: { prompt: 'Votre référence de prestataire', wrong: 'Ce n’est pas ce que dit la configuration active. Un brouillon périmé traîne sur cette machine : vérifiez quel fichier vous avez lu.', right: 'Notez que vous l’avez lue dans la configuration active, pas dans le brouillon posé à côté du document d’accueil.' },
       extraAnswers: [{ prompt: 'Hôte du relais amont', placeholder: 'nom d’hôte', wrong: 'Lisez la ligne host de la section [upstream] de relay.conf.', right: 'Votre poste garde une connexion active vers cet hôte. Retenez ce nom.' }],
       hints: ['intake.txt indique le fichier qu’il vous faut.', 'cat /opt/relay/relay.conf. Cherchez contractor_ref et host.', 'submit contractor_ref c-0047, et submit upstream avec la valeur de host.'],
     },
     receipt: {
-      text: 'Créez ~/cases/m01/receipt.txt contenant votre référence de contractuel.',
+      text: 'Créez ~/cases/m01/receipt.txt contenant votre référence de prestataire.',
       note: 'mkdir -p crée le chemin. echo ... > fichier écrit dedans.',
       hints: ['Deux étapes : créer les dossiers, puis écrire le fichier.', 'mkdir -p crée les parents au passage. L’opérateur > envoie la sortie dans un fichier.', 'mkdir -p ~/cases/m01 puis echo "c-0047" > ~/cases/m01/receipt.txt'],
     },
   },
   optionals: {
-    notes41: { title: 'Quelque chose d’oublié', text: 'Un utilisateur précédent a laissé une note dans un fichier caché. Elle ne vous était pas destinée, et vous l’avez lue.', effects: ['Un contractuel précédent, « lowtide », c-0041, a laissé une note dans ~/.cache. « Les exercices ne sont pas des exercices. »'] },
+    notes41: { title: 'Quelque chose d’oublié', text: 'Un utilisateur précédent a laissé une note dans un fichier caché. Elle ne vous était pas destinée, et vous l’avez lue.', effects: ['Un prestataire précédent, « lowtide », c-0041, a laissé une note dans ~/.cache. « Les exercices ne sont pas des exercices. »'] },
     history41: { title: 'L’historique de quelqu’un d’autre', text: '.bash_history appartient à celui qui avait cette machine avant vous. Il se termine par une tentative de nettoyage.' },
     relayproc: { title: 'À qui parle cette machine ?', text: 'ps aux montre un démon de relais qui tourne sous son propre utilisateur, lancé avant même votre première connexion.' },
   },

@@ -34,7 +34,13 @@ export type Cond =
   | { beat: string }
   | { objectiveDone: [string, string] }
   | { optionalDone: [string, string] }
-  | { signal: string };
+  | { signal: string }
+  /** Current standing is at least this. */
+  | { standing: number }
+  /** The player has opened this file on the workbench. */
+  | { read: string }
+  /** A play statistic has reached this value. */
+  | { stat: ['failed' | 'hintsUsed' | 'commands', number] };
 
 export type Effect =
   | { flag: string }
@@ -101,6 +107,10 @@ export interface Beat {
   effects?: Effect[];
   /** Asks for the contact request card first. */
   contactRequest?: boolean;
+  /** Its choices are banter: the next beat in the thread replaces them, so ignoring them never holds anything up. */
+  expires?: boolean;
+  /** Scene colour added after the first release. Old saves skip these rather than replay them all at once. */
+  social?: boolean;
 }
 
 export interface ChatMessage {

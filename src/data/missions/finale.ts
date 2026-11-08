@@ -112,7 +112,7 @@ export const M05: Mission = {
       skill: 'osint',
     },
   ],
-  rewards: { xp: 120, credits: 0, standing: 0 },
+  rewards: { xp: 120, credits: 0, standing: 60 },
   review: {
     accomplished: 'You audited your own machine, analysed session metadata, and assembled a dossier that a stranger could check without trusting you.',
     concepts: ['sudo policy review', 'Metadata analysis with SQL', 'Hashing and chain of custody', 'Provenance and verification'],
