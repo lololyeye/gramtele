@@ -1,9 +1,11 @@
-import { Component, ReactNode, useEffect, useMemo, useState } from 'react';
+import { Component, ReactNode, useMemo, useState } from 'react';
 import { newState } from '../game/engine';
 import type { SlotInfo } from '../game/persistence';
+import { LANGUAGES, tr } from '../i18n';
+import { realDateTime } from './format';
 import { Intro, Logo, SignUp } from './Intro';
 import { GameShell } from './GameShell';
-import { Session, SessionProvider } from './session';
+import { Session, SessionProvider, useSession } from './session';
 
 type Phase = 'title' | 'intro' | 'signup' | 'game';
 
@@ -17,60 +19,73 @@ class Boundary extends Component<{ session: Session; children: ReactNode }, { er
     const s = this.props.session;
     return (
       <main className="fatal" role="alert">
-        <h1>The interface stopped</h1>
-        <p>Your last autosave is intact. Reloading usually fixes this.</p>
+        <h1>{tr('The interface stopped')}</h1>
+        <p>{tr('Your last autosave is intact. Reloading usually fixes this.')}</p>
         <pre>{this.state.error.message}</pre>
         <div className="row">
-          <button className="btn" onClick={() => window.location.reload()}>Reload</button>
+          <button className="btn" onClick={() => window.location.reload()}>{tr('Reload')}</button>
           <button className="btn-quiet" onClick={() => {
             const blob = new Blob([s.store.export(s.engine.state)], { type: 'application/json' });
             const a = document.createElement('a');
             a.href = URL.createObjectURL(blob);
             a.download = 'gramtele-recovery.json';
             a.click();
-          }}>Export a copy of this game</button>
+          }}>{tr('Export a copy of this game')}</button>
         </div>
       </main>
     );
   }
 }
 
+function TitleLanguage() {
+  const s = useSession();
+  return (
+    <div className="title-lang" role="group" aria-label={tr('Language')}>
+      {LANGUAGES.map((l) => (
+        <button key={l.id} type="button" className={s.language === l.id ? 'on' : ''} aria-pressed={s.language === l.id} onClick={() => s.setLanguage(l.id)}>{l.label}</button>
+      ))}
+    </div>
+  );
+}
+
 function TitleScreen({ session, onNew, onContinue }: { session: Session; onNew: () => void; onContinue: () => void }) {
+  useSession();
   const [error, setError] = useState<string | null>(null);
   const [confirm, setConfirm] = useState(false);
   const auto: SlotInfo | null = session.store.info('auto');
   return (
     <main className="title-screen">
+      <TitleLanguage />
       <Logo />
-      <p className="title-tag">A cybersecurity investigation, played in a terminal.</p>
-      <nav className="title-menu" aria-label="Main menu">
+      <p className="title-tag">{tr('A cybersecurity investigation, played in a terminal.')}</p>
+      <nav className="title-menu" aria-label={tr('Main menu')}>
         {auto && (
           <button className="title-item primary" autoFocus onClick={() => {
             const r = session.store.load('auto');
-            if (!r || 'error' in r) setError(r && 'error' in r ? `The autosave could not be read: ${r.error}` : 'No autosave.');
+            if (!r || 'error' in r) setError(r && 'error' in r ? tr('The autosave could not be read: {error}', { error: tr(r.error) }) : tr('No autosave.'));
             else {
               session.replace(r.state);
               onContinue();
             }
           }}>
-            Continue
-            <small>{auto.handle}, {auto.xp} XP, {new Date(auto.savedAt).toLocaleString()}</small>
+            {tr('Continue')}
+            <small>{auto.handle}, {auto.xp} XP, {realDateTime(auto.savedAt)}</small>
           </button>
         )}
         {auto && !confirm ? (
-          <button className="title-item" onClick={() => setConfirm(true)}>New game</button>
+          <button className="title-item" onClick={() => setConfirm(true)}>{tr('New game')}</button>
         ) : (
-          <button className={auto ? 'title-item' : 'title-item primary'} autoFocus={!auto} onClick={onNew}>
-            {auto ? 'Replace the autosave and begin' : 'Begin'}
+          <button className={auto ? 'title-item danger' : 'title-item primary'} autoFocus={!auto} onClick={onNew}>
+            {auto ? tr('Replace the autosave and begin') : tr('Begin')}
           </button>
         )}
         <label className="title-item">
-          Import a save
+          {tr('Import a save')}
           <input type="file" accept="application/json,.json" className="sr" onChange={async (e) => {
             const f = e.target.files?.[0];
             if (!f) return;
             const r = session.store.import(await f.text());
-            if ('error' in r) setError(`Import refused: ${r.error}`);
+            if ('error' in r) setError(tr('Import refused: {error}', { error: tr(r.error) }));
             else {
               session.replace(r.state);
               onContinue();
@@ -79,7 +94,7 @@ function TitleScreen({ session, onNew, onContinue }: { session: Session; onNew: 
         </label>
       </nav>
       {error && <p className="finding-wrong" role="alert">{error}</p>}
-      <p className="title-foot">Everything here is simulated: the machines, the network, the people. Nothing you type leaves this page.</p>
+      <p className="title-foot">{tr('Everything here is simulated: the machines, the network, the people. Nothing you type leaves this page.')}</p>
     </main>
   );
 }
@@ -87,10 +102,6 @@ function TitleScreen({ session, onNew, onContinue }: { session: Session; onNew: 
 export function App() {
   const session = useMemo(() => new Session(newState()), []);
   const [phase, setPhase] = useState<Phase>('title');
-
-  useEffect(() => {
-    document.title = phase === 'game' ? 'Gramtele' : 'Gramtele';
-  }, [phase]);
 
   return (
     <Boundary session={session}>

@@ -1,3 +1,4 @@
+import { tr } from '../../i18n';
 import { ROOT } from '../filesystem/vfs';
 import type { Command, FullScreen } from '../terminal/types';
 import { isoTime, pad, padEnd, parseArgs } from './args';
@@ -312,29 +313,29 @@ export function renderMan(cmd: Command): string {
   const m = cmd.man;
   const out: string[] = [];
   const name = cmd.name.toUpperCase();
-  out.push(`${name}(1)${' '.repeat(26)}Workbench Manual${' '.repeat(26)}${name}(1)`, '');
-  out.push('NAME', `       ${cmd.name} - ${m.name}`, '');
-  out.push('SYNOPSIS');
+  out.push(`${name}(1)${' '.repeat(26)}${tr('Workbench Manual')}${' '.repeat(26)}${name}(1)`, '');
+  out.push(tr('NAME'), `       ${cmd.name} - ${tr(m.name)}`, '');
+  out.push(tr('SYNOPSIS'));
   for (const s of m.synopsis) out.push(`       ${s}`);
-  out.push('', 'DESCRIPTION');
-  out.push(...wrap(m.description, 70).map((l) => `       ${l}`));
+  out.push('', tr('DESCRIPTION'));
+  out.push(...wrap(tr(m.description), 70).map((l) => `       ${l}`));
   if (m.options?.length) {
-    out.push('', 'OPTIONS');
+    out.push('', tr('OPTIONS'));
     for (const [k, v] of m.options) {
       out.push(`       ${k}`);
-      out.push(...wrap(v, 62).map((l) => `              ${l}`));
+      out.push(...wrap(tr(v), 62).map((l) => `              ${l}`));
     }
   }
   if (m.examples?.length) {
-    out.push('', 'EXAMPLES');
+    out.push('', tr('EXAMPLES'));
     for (const [k, v] of m.examples) {
       out.push(`       $ ${k}`);
-      out.push(...wrap(v, 62).map((l) => `              ${l}`));
+      out.push(...wrap(tr(v), 62).map((l) => `              ${l}`));
     }
   }
   if (m.why) {
-    out.push('', 'WHY IT MATTERS');
-    out.push(...wrap(m.why, 70).map((l) => `       ${l}`));
+    out.push('', tr('WHY IT MATTERS'));
+    out.push(...wrap(tr(m.why), 70).map((l) => `       ${l}`));
   }
   return out.join('\n') + '\n';
 }
@@ -373,7 +374,7 @@ const man: Command = {
       return 16;
     }
     const text = renderMan(c);
-    if (ctx.isTty) ctx.sh.fullscreen = pagerFor(`Manual page ${n}(1)`, text);
+    if (ctx.isTty) ctx.sh.fullscreen = pagerFor(tr('Manual page {name}(1)', { name: n }), text);
     else ctx.out(text);
     return 0;
   },
@@ -387,9 +388,9 @@ const help: Command = {
     if (n) {
       const c = ctx.sh.commands.get(n);
       if (!c || (c.tool && !ctx.sh.host.isToolUnlocked(c.tool))) return ctx.fail(`no help topics match '${n}'`);
-      ctx.line(`${c.name}: ${c.man.name}`);
+      ctx.line(`${c.name}: ${tr(c.man.name)}`);
       for (const s of c.man.synopsis) ctx.line(`  ${s}`);
-      ctx.line(`See: man ${c.name}`);
+      ctx.line(tr('See: man {name}', { name: c.name }));
       return 0;
     }
     const groups = (ctx.sh.host.services.helpGroups as [string, string[]][] | undefined) ?? [];
@@ -399,11 +400,11 @@ const help: Command = {
         return c && (!c.tool || ctx.sh.host.isToolUnlocked(c.tool));
       });
       if (!shown.length) continue;
-      ctx.line(`${title}:`);
+      ctx.line(`${tr(title)}:`);
       ctx.line(`  ${shown.join('  ')}`);
     }
     ctx.line('');
-    ctx.line('man COMMAND gives the full manual. Pipes (|), redirection (> >> <), &&, || and ; all work.');
+    ctx.line(tr('man COMMAND gives the full manual. Pipes (|), redirection (> >> <), &&, || and ; all work.'));
     return 0;
   },
 };

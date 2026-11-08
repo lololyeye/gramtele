@@ -3,6 +3,8 @@
  * narrative and progression. It has no React in it and can be played headlessly.
  */
 import { CHARACTERS } from '../data/characters';
+import { CHAT_REACTIONS, smalltalkFor } from '../data/dialogue/smalltalk';
+import { tr } from '../i18n';
 import { gramteleMetaSeed } from '../data/databases/gramtele-meta';
 import { nexusArchiveSeed } from '../data/databases/nexus-archive';
 import { BEATS, WORLD_RULES } from '../data/dialogue';
@@ -18,7 +20,7 @@ import { DirNode, FileNode, installFile, normalize, ROOT, SeedFile, VFS } from '
 import { Shell } from './terminal/shell';
 import type { ShellEvent, ShellHost } from './terminal/types';
 import type {
-  AnswerDef, Beat, ChatMessage, CharacterId, Check, Choice, Cond, Effect, FieldNote, GameState, JournalKind, Mission, MissionProgress, Msg,
+  AnswerDef, Attachment, Beat, ChatMessage, CharacterId, Check, Choice, Cond, Effect, FieldNote, GameState, JournalKind, Mission, MissionProgress, Msg,
   Objective, ReportDef, Settings, SkillCheck, Stats, ThreadId, Toast,
 } from './types';
 import { NetEvent, VirtualNet } from './virtual-network/net';
@@ -84,6 +86,31 @@ export function newState(): GameState {
 }
 
 const normAnswer = (s: string) => s.trim().toLowerCase().replace(/\.$/, '').replace(/\s+/g, ' ');
+
+const wordsOf = (s: string) => s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9 ]+/g, ' ').split(/\s+/).filter(Boolean);
+
+/** Finds the suggested reply the player meant: its number, its words, or most of its words. In either language. */
+export function matchChoice(text: string, choices: Choice[]): Choice | null {
+  const digit = /^[1-9]$/.test(text.trim()) ? Number(text.trim()) - 1 : -1;
+  if (digit >= 0 && choices[digit]) return choices[digit];
+  const said = wordsOf(text);
+  if (!said.length) return null;
+  let best: Choice | null = null;
+  let bestScore = 0;
+  for (const c of choices) {
+    for (const source of [c.label, c.reply ?? c.label, tr(c.label), tr(c.reply ?? c.label)]) {
+      const words = wordsOf(source);
+      if (!words.length) continue;
+      const hits = said.filter((w) => words.includes(w)).length;
+      const score = hits / Math.max(said.length, words.length);
+      if (score > bestScore) {
+        bestScore = score;
+        best = c;
+      }
+    }
+  }
+  return bestScore >= 0.72 ? best : null;
+}
 
 export interface ReportResponses {
   [sectionId: string]: string | string[];
@@ -164,6 +191,7 @@ export class GameEngine implements GameApi {
       {
         now: () => this.now(),
         resolve: () => '',
+        localize: (text) => (text ? tr(text) : text),
         onRead: (path) => this.onShellEvent({ t: 'read', host: hostname, path }),
         onChange: (op, path) => this.onShellEvent({ t: 'fs', host: hostname, op, path }),
       },
@@ -202,7 +230,7 @@ export class GameEngine implements GameApi {
   signUp(handle: string): void {
     this.state.handle = handle;
     this.state.flags.signed_up = true;
-    this.state.threads.NULL ??= { messages: [], unread: 0, archived: false, visible: true };
+    this.state.threads.NULL ??= { messages: [], unread: 0, archived: false, visible: true, pinned: true };
     this.addJournal('Created a Gramtele account. Nothing about this felt important at the time.', 'story');
     this.pump();
     this.changed();
@@ -394,7 +422,7 @@ export class GameEngine implements GameApi {
         const fs = this.fileSystem(c.host ?? 'workbench');
         const n = fs.lookup(c.path);
         if (!n || n.k !== 'f') return false;
-        if (c.contains && !fs.fileContent(n).includes(c.contains)) return false;
+        if (c.contains && !fs.rawContent(n).includes(c.contains) && !fs.fileContent(n).includes(c.contains)) return false;
         if (c.mode !== undefined && (n.mode & 0o777) !== c.mode) return false;
         if (c.tag && n.tag !== c.tag) return false;
         return true;
@@ -440,7 +468,7 @@ export class GameEngine implements GameApi {
             p.objectives.push(o.id);
             const hintPenalty = Math.min(p.hints[o.id] ?? 0, 3) * 0.1;
             this.addXp(Math.round(o.xp * (1 - hintPenalty)));
-            this.toast({ kind: 'objective', title: 'Objective complete', body: o.text });
+            this.toast({ kind: 'objective', title: tr('Objective complete'), body: tr(o.text) });
             if (o.effects) this.apply(o.effects);
           }
         }
@@ -449,7 +477,7 @@ export class GameEngine implements GameApi {
           if (this.checkPasses(o.check, m, p)) {
             p.optionals.push(o.id);
             this.addXp(o.xp);
-            this.toast({ kind: 'evidence', title: `Discovery: ${o.title}`, body: o.text });
+            this.toast({ kind: 'evidence', title: tr('Discovery: {title}', { title: tr(o.title) }), body: tr(o.text) });
             if (o.effects) this.apply(o.effects);
           }
         }
@@ -473,7 +501,7 @@ export class GameEngine implements GameApi {
       if (this.skillPasses(n.id, n.check)) {
         this.state.skills.push(n.id);
         this.addXp(10);
-        this.toast({ kind: 'skill', title: `Skill: ${n.title}`, body: n.text });
+        this.toast({ kind: 'skill', title: tr('Skill: {title}', { title: tr(n.title) }), body: tr(n.text) });
       }
     }
   }
@@ -539,18 +567,18 @@ export class GameEngine implements GameApi {
     this.signal('ending-chosen');
     if (id === 'ghost' && this.state.sealed) this.state.flags.sealed_kept = true;
     this.award('all_endings_one');
-    this.addJournal(`The Gramtele file closes here.`, 'decision');
+    this.addJournal('The Gramtele file closes here.', 'decision');
     this.evaluate();
   }
 
   private unlockTool(t: string): void {
     if (this.state.tools.includes(t)) return;
     this.state.tools.push(t);
-    this.toast({ kind: 'system', title: 'Tools installed', body: `Toolkit: ${t}. "help" lists what is new.` });
+    this.toast({ kind: 'system', title: tr('Tools installed'), body: tr('Toolkit: {name}. "help" lists what is new.', { name: t }) });
   }
 
-  addJournal(text: string, kind: JournalKind = 'note'): void {
-    this.state.journal.unshift({ at: this.now(), kind, text });
+  addJournal(text: string, kind: JournalKind = 'note', vars?: Record<string, string>): void {
+    this.state.journal.unshift({ at: this.now(), kind, text, ...(vars ? { vars } : {}) });
   }
 
   addNote(text: string): void {
@@ -564,14 +592,14 @@ export class GameEngine implements GameApi {
     if (!a) return;
     this.state.achievements.push(id);
     this.addXp(15);
-    this.toast({ kind: 'achievement', title: a.title, body: a.text });
+    this.toast({ kind: 'achievement', title: tr(a.title), body: tr(a.text) });
   }
 
   private addXp(n: number): void {
     const before = levelFor(this.state.xp);
     this.state.xp += n;
     const after = levelFor(this.state.xp);
-    if (after > before) this.toast({ kind: 'level', title: `Level ${after}` });
+    if (after > before) this.toast({ kind: 'level', title: tr('Level {n}', { n: after }) });
   }
 
   toast(t: Omit<Toast, 'id'>): void {
@@ -609,8 +637,8 @@ export class GameEngine implements GameApi {
     }
     for (const t of m.tools) this.unlockTool(t);
     for (const f of m.files ?? []) installFile(this.fileSystem(f.host), { ...f.file, mtime: f.file.mtime ?? this.now() });
-    this.toast({ kind: 'mission', title: `Mission accepted: ${m.title}`, body: `Chapter ${m.chapter}. ${m.chapterTitle}.` });
-    this.addJournal(`Accepted "${m.title}" from ${m.contact}.`, 'story');
+    this.toast({ kind: 'mission', title: tr('Mission accepted: {title}', { title: tr(m.title) }), body: tr('Chapter {n}. {title}.', { n: m.chapter, title: tr(m.chapterTitle) }) });
+    this.addJournal('Accepted "{title}" from {contact}.', 'story', { title: m.title, contact: m.contact });
     this.evaluate();
     this.changed();
   }
@@ -624,8 +652,8 @@ export class GameEngine implements GameApi {
     this.state.standing += m.rewards.standing;
     if (!Object.keys(p.hints).length) this.award('no_hints');
     if (p.optionals.length === m.optionals.length) this.award('explorer');
-    this.toast({ kind: 'mission', title: `Mission complete: ${m.title}`, body: `+${m.rewards.xp} XP, +${m.rewards.credits} credits` });
-    this.addJournal(`Completed "${m.title}".`, 'story');
+    this.toast({ kind: 'mission', title: tr('Mission complete: {title}', { title: tr(m.title) }), body: tr('+{xp} XP, +{credits} credits', { xp: m.rewards.xp, credits: m.rewards.credits }) });
+    this.addJournal('Completed "{title}".', 'story', { title: m.title });
     if (m.onComplete) this.apply(m.onComplete);
   }
 
@@ -645,44 +673,44 @@ export class GameEngine implements GameApi {
     const m = this.activeMissionDef();
     const p = this.activeProgress();
     if (!m || !p) return [];
-    return m.objectives.flatMap((o) => this.answersFor(o)).filter((a) => p.answers[a.key] === undefined).map((a) => ({ key: a.key, prompt: a.prompt }));
+    return m.objectives.flatMap((o) => this.answersFor(o)).filter((a) => p.answers[a.key] === undefined).map((a) => ({ key: a.key, prompt: tr(a.prompt) }));
   }
 
   submit(key: string, value: string): { known: boolean; ok: boolean; message: string } {
     const m = this.activeMissionDef();
     const p = this.activeProgress();
-    if (!m || !p) return { known: false, ok: false, message: 'No active assignment.' };
+    if (!m || !p) return { known: false, ok: false, message: tr('No active assignment.') };
     const def = m.objectives.flatMap((o) => this.answersFor(o)).find((a) => a.key === key);
-    if (!def) return { known: false, ok: false, message: `This assignment has no finding called "${key}". Run "submit" to see what is outstanding.` };
-    if (p.answers[key] !== undefined) return { known: true, ok: true, message: `Already filed: ${key} = ${p.answers[key]}` };
+    if (!def) return { known: false, ok: false, message: tr('This assignment has no finding called "{key}". Run "submit" to see what is outstanding.', { key }) };
+    if (p.answers[key] !== undefined) return { known: true, ok: true, message: tr('Already filed: {key} = {value}', { key, value: p.answers[key] }) };
     const v = normAnswer(value);
     if (def.accept.some((x) => normAnswer(x) === v)) {
       p.answers[key] = value;
       this.evaluate();
       this.changed();
-      return { known: true, ok: true, message: `Filed. ${def.right ?? ''}`.trim() };
+      return { known: true, ok: true, message: `${tr('Filed.')} ${def.right ? tr(def.right) : ''}`.trim() };
     }
     p.wrong.push({ key, value });
     this.changed();
-    return { known: true, ok: false, message: `Not accepted. ${def.wrong ?? 'Check your evidence and try again.'}` };
+    return { known: true, ok: false, message: `${tr('Not accepted.')} ${tr(def.wrong ?? 'Check your evidence and try again.')}` };
   }
 
   missionStatus(): string[] {
     const m = this.activeMissionDef();
     const p = this.activeProgress();
-    if (!m || !p) return ['No active assignment. Check Gramtele.'];
-    const lines = [`${m.id}: ${m.title}  (Chapter ${m.chapter}, contact ${m.contact})`, ''];
-    m.objectives.forEach((o, i) => lines.push(`  ${p.objectives.includes(o.id) ? '[x]' : '[ ]'} ${i + 1}. ${o.text}`));
+    if (!m || !p) return [tr('No active assignment. Check Gramtele.')];
+    const lines = [tr('{id}: {title}  (Chapter {n}, contact {contact})', { id: m.id, title: tr(m.title), n: m.chapter, contact: m.contact }), ''];
+    m.objectives.forEach((o, i) => lines.push(`  ${p.objectives.includes(o.id) ? '[x]' : '[ ]'} ${i + 1}. ${tr(o.text)}`));
     return lines;
   }
 
   hint(index?: number): string {
     const m = this.activeMissionDef();
     const p = this.activeProgress();
-    if (!m || !p) return 'No active assignment.';
+    if (!m || !p) return tr('No active assignment.');
     const o = index !== undefined ? m.objectives[index] : m.objectives.find((x) => !p.objectives.includes(x.id));
-    if (!o) return 'No such objective.';
-    if (p.objectives.includes(o.id)) return 'That objective is already complete.';
+    if (!o) return tr('No such objective.');
+    if (p.objectives.includes(o.id)) return tr('That objective is already complete.');
     return this.revealHint(m.id, o.id) ?? '';
   }
 
@@ -696,7 +724,7 @@ export class GameEngine implements GameApi {
     p.hints[o.id] = level + 1;
     this.stats().hintsUsed++;
     this.changed();
-    return `Hint ${level + 1}/3: ${o.hints[level]}`;
+    return tr('Hint {n}/3: {text}', { n: level + 1, text: tr(o.hints[level]) });
   }
 
   fileReport(missionId: string, responses: ReportResponses): ReportResult {
@@ -761,18 +789,18 @@ export class GameEngine implements GameApi {
     const id = tag && EVIDENCE[tag] ? tag : `misc-${hash.slice(0, 10)}`;
     const added = this.addEvidence(id, hash, path);
     const rec = this.state.evidence.find((e) => e.id === id)!;
-    if (added) this.toast({ kind: 'evidence', title: 'Evidence collected', body: rec.title });
+    if (added) this.toast({ kind: 'evidence', title: tr('Evidence collected'), body: tr(rec.title) });
     this.evaluate();
     this.changed();
-    return { added, title: added ? rec.title : `Already in locker: ${rec.title}` };
+    return { added, title: added ? tr(rec.title) : tr('Already in locker: {title}', { title: tr(rec.title) }) };
   }
 
   evidenceRows() {
-    return this.state.evidence.map((e) => ({ id: e.id, title: e.title, hash: e.hash, source: e.source }));
+    return this.state.evidence.map((e) => ({ id: e.id, title: tr(e.title), hash: e.hash, source: tr(e.source) }));
   }
 
   dossierRequired() {
-    return Object.values(EVIDENCE).filter((e) => e.exhibit).map((e) => ({ tag: e.id, title: e.title }));
+    return Object.values(EVIDENCE).filter((e) => e.exhibit).map((e) => ({ tag: e.id, title: tr(e.title) }));
   }
 
   markSealed(tags: string[]): void {
@@ -787,7 +815,7 @@ export class GameEngine implements GameApi {
   // ---------- narrative ----------
 
   private thread(id: ThreadId) {
-    return (this.state.threads[id] ??= { messages: [], unread: 0, archived: CHARACTERS[id].kind === 'archive', visible: true });
+    return (this.state.threads[id] ??= { messages: [], unread: 0, archived: CHARACTERS[id].kind === 'archive', visible: true, pinned: id === 'NULL' });
   }
 
   private pump(): void {
@@ -846,7 +874,111 @@ export class GameEngine implements GameApi {
     th.messages.push(cm);
     th.unread++;
     th.visible = true;
-    if (from !== 'sys') this.toast({ kind: 'message', title: CHARACTERS[threadId].handle, body: msg.text.length > 90 ? `${msg.text.slice(0, 90)}...` : msg.text, thread: threadId });
+    if (from !== 'sys' && !th.muted) {
+      const shown = tr(msg.text);
+      this.toast({ kind: 'message', title: CHARACTERS[threadId].handle, body: shown.length > 90 ? `${shown.slice(0, 90)}...` : shown, thread: threadId });
+    }
+    if (from !== 'sys') this.reactToPlayer(threadId, cm.id);
+  }
+
+  /** Now and then the other side acknowledges what you last said without writing anything. Never changes the story. */
+  private reactToPlayer(id: ThreadId, seed: number): void {
+    const pool = CHAT_REACTIONS[id];
+    if (!pool || seed % 3 !== 0) return;
+    const th = this.thread(id);
+    const mine = [...th.messages].reverse().find((m) => m.from === 'me');
+    if (!mine || mine.reactions?.some((r) => r.from !== 'me')) return;
+    mine.reactions = [...(mine.reactions ?? []), { emoji: pool.emoji[seed % pool.emoji.length], from: pool.from }];
+  }
+
+  /** Where the unread separator goes when the player opens this conversation. */
+  firstUnreadId(id: ThreadId): number | null {
+    const th = this.state.threads[id];
+    if (!th?.unread) return null;
+    return th.messages.at(-th.unread)?.id ?? null;
+  }
+
+  // ---------- messaging ----------
+
+  /**
+   * Sends what the player typed. Text that matches a suggested reply counts as choosing it;
+   * anything else is an ordinary message, answered in character, that leaves the story where it was.
+   */
+  sendMessage(id: ThreadId, raw: string): 'choice' | 'message' | 'refused' {
+    const text = raw.trim();
+    if (!text || !this.canWrite(id)) return 'refused';
+    const av = this.choicesFor(id);
+    const match = av ? matchChoice(text, av.choices) : null;
+    if (match) {
+      this.choose(id, match.id);
+      return 'choice';
+    }
+    const th = this.thread(id);
+    th.messages.push({ id: this.state.nextMsgId++, from: 'me', text, at: this.now() });
+    this.answerOffScript(id);
+    this.changed();
+    return 'message';
+  }
+
+  /** Sends a file from the workbench. It is only a copy in a chat: uploads that matter go through curl. */
+  sendFile(id: ThreadId, path: string): boolean {
+    if (!this.canWrite(id)) return false;
+    const fs = this.fileSystem('workbench');
+    const node = fs.lookup(path);
+    if (node?.k !== 'f') return false;
+    const content = fs.fileContent(node);
+    const printable = !/[\x00-\x08\x0e-\x1f]/.test(content.slice(0, 2000));
+    const attachment: Attachment = {
+      name: path.split('/').pop() ?? path,
+      kind: /\.(jpe?g|png)$/i.test(path) ? 'photo' : printable ? 'text' : 'file',
+      preview: printable ? content.slice(0, 900) : tr('Binary file, {n} bytes.', { n: content.length }),
+    };
+    this.thread(id).messages.push({ id: this.state.nextMsgId++, from: 'me', text: '', at: this.now(), attachment });
+    this.answerOffScript(id, true);
+    this.changed();
+    return true;
+  }
+
+  private answerOffScript(id: ThreadId, attachment = false): void {
+    if (this.state.pendingMessages.some((m) => m.thread === id)) return;
+    const th = this.thread(id);
+    const n = th.smalltalk ?? 0;
+    th.smalltalk = n + 1;
+    const reply = smalltalkFor(id, n, attachment);
+    if (reply) this.queue(id, [reply], this.realNow() + 500);
+  }
+
+  canWrite(id: ThreadId): boolean {
+    return CHARACTERS[id]?.kind !== 'archive' && !!this.state.threads[id]?.visible;
+  }
+
+  /** Toggles one of the player's reactions on a message. */
+  react(id: ThreadId, messageId: number, emoji: string): void {
+    const msg = this.state.threads[id]?.messages.find((m) => m.id === messageId);
+    if (!msg) return;
+    const had = msg.reactions?.some((r) => r.from === 'me' && r.emoji === emoji);
+    const others = (msg.reactions ?? []).filter((r) => r.from !== 'me');
+    msg.reactions = had ? others : [...others, { emoji, from: 'me' }];
+    this.changed();
+  }
+
+  togglePinned(id: ThreadId): void {
+    const th = this.thread(id);
+    th.pinned = !th.pinned;
+    this.changed();
+  }
+
+  toggleMuted(id: ThreadId): void {
+    const th = this.thread(id);
+    th.muted = !th.muted;
+    this.changed();
+  }
+
+  togglePinnedMessage(id: ThreadId, messageId: number): void {
+    const th = this.thread(id);
+    const list = th.pinnedMessages ?? [];
+    th.pinnedMessages = list.includes(messageId) ? list.filter((x) => x !== messageId) : [...list, messageId].sort((a, b) => a - b);
+    this.changed();
   }
 
   markRead(id: ThreadId): void {

@@ -47,7 +47,7 @@ export const M05: Mission = {
       text: 'Open the Gramtele metadata export. How many devices sign in as NULL, and which one is shared with another handle?',
       note: 'MOTH or ROOTLESS will get you the file. Join sessions to accounts, and GROUP BY device.',
       check: { kind: 'all', of: [{ kind: 'sql', db: 'gramtele_meta', match: 'sessions' }, { kind: 'answer', key: 'null_devices' }, { kind: 'answer', key: 'shared_device' }] },
-      answer: { key: 'null_devices', prompt: 'Distinct devices signing in as NULL', accept: ['3', 'three'], placeholder: 'number', wrong: 'COUNT(DISTINCT device_id) for the NULL account.', right: 'Three devices, working in shifts. NULL is a job, not a person.' },
+      answer: { key: 'null_devices', prompt: 'Distinct devices signing in as NULL', accept: ['3', 'three', 'trois'], placeholder: 'number', wrong: 'COUNT(DISTINCT device_id) for the NULL account.', right: 'Three devices, working in shifts. NULL is a job, not a person.' },
       extraAnswers: [{ key: 'shared_device', prompt: 'Device used by NULL and by another handle', accept: ['d-90be'], placeholder: 'd-0000', wrong: 'List device and handle pairs, then look for a device that appears under two handles.', right: 'd-90be signs in as NULL and as VANTA. The person who taught you to take notes has been reading them.' }],
       xp: 60,
       skill: 'databases',

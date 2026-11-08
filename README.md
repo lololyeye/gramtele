@@ -2,11 +2,11 @@
 
 # gramtele
 
-**Un jeu d'enquête en cybersécurité, qui se joue dans un vrai terminal.**
+**Un jeu d'enquête en cybersécurité, qui se joue dans une messagerie et un vrai terminal.**
 
 [**Jouer dans le navigateur**](https://lololyeye.github.io/gramtele/)
 
-Aucune installation, aucun compte. La partie reste dans ton navigateur.
+Aucune installation, aucun compte. En français et en anglais. La partie reste dans ton navigateur.
 
 ![Tests et déploiement](https://github.com/lololyeye/gramtele/actions/workflows/deploy.yml/badge.svg)
 
@@ -26,11 +26,11 @@ Rien n'est scripté à coups de réponses toutes faites. Le terminal interprète
 
 | Chapitre | Mission | Ce que tu apprends |
 |---|---|---|
-| 1 | **A Quiet Introduction** | Linux : arborescence, droits, `find`, `grep`, pipes |
-| 2 | **The Digital Shadow** | OSINT : pivots, métadonnées, fiabilité des sources |
-| 3 | **The Forgotten Archive** | SQL : schémas, `JOIN`, `GROUP BY`, journaux d'audit |
-| 4 | **Surface Area** | Réseau : DNS, ports, HTTP, certificats, traceroute |
-| 5 | **Keep Copies** | Le dossier de preuves, puis la décision qui clôt l'histoire |
+| 1 | **Une présentation discrète** | Linux : arborescence, droits, `find`, `grep`, pipes |
+| 2 | **L'ombre numérique** | OSINT : pivots, métadonnées, fiabilité des sources |
+| 3 | **L'archive oubliée** | SQL : schémas, `JOIN`, `GROUP BY`, journaux d'audit |
+| 4 | **Le serveur silencieux** | Réseau : DNS, ports, HTTP, certificats, traceroute |
+| 5 | **Gardez des copies** | Le dossier de preuves, puis la décision qui clôt l'histoire |
 
 Chaque mission se termine par une revue : ce que tu as fait, pourquoi la méthode marche, et comment s'en défendre. Trois niveaux d'indices sont là si tu bloques.
 
@@ -43,7 +43,8 @@ Chaque mission se termine par une revue : ce que tu as fait, pourquoi la méthod
 - **Terminal** : système de fichiers virtuel, permissions, pipes, redirections, variables, globs, historique, complétion, `man` et `less`.
 - **Vraies requêtes SQL** : SQLite tourne en WebAssembly. Les bases de preuves sont en lecture seule.
 - **Internet simulé** : `dig`, `nmap`, `curl`, `whois`, `traceroute`, un navigateur intégré et une carte qui grandit avec tes découvertes.
-- **Gramtele** : conversations, groupe, archives, pièces jointes, profils que tu complètes en enquêtant.
+- **Gramtele** : une vraie messagerie à trois colonnes. Bulles groupées, accusés de lecture, réactions, épingles, recherche, pièces jointes, cartes de mission, messages libres et réponses suggérées, profils que tu complètes en enquêtant.
+- **Deux langues** : tout le jeu existe en français et en anglais, de l'histoire aux pages de manuel. La langue suit ton navigateur et se change dans les réglages.
 - **Progression** : les compétences s'obtiennent en les démontrant, pas en les achetant.
 - **Sauvegardes** : automatique, trois emplacements, export et import.
 - **Confort** : tout au clavier, adapté au mobile, mouvement réduit, taille de texte réglable, son optionnel et coupé par défaut.
@@ -84,10 +85,9 @@ npm run dev
 src/
   game/   moteur sans React : shell, système de fichiers, réseau virtuel, SQL, sauvegardes
   data/   contenu : missions, dialogues, sites, bases de données
-  ui/     interface React
+  ui/     interface React : messagerie, vues, styles
+  i18n/   langues : détection, catalogue français écrit à la main
 docs/     bible de l'histoire (attention, elle dévoile tout)
 ```
 
 Construit avec React, TypeScript, Vite et [sql.js](https://github.com/sql-js/sql.js).
-
-Le contenu du jeu est en anglais.

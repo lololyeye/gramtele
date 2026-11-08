@@ -78,6 +78,8 @@ export interface VfsHooks {
   resolve: ContentResolver;
   onRead?: (path: string) => void;
   onChange?: (op: string, path: string) => void;
+  /** Shows a stored document in the player's language. The stored text never changes. */
+  localize?: (text: string) => string;
 }
 
 export function normalize(path: string, cwd = '/'): string {
@@ -201,10 +203,16 @@ export class VFS {
 
   // ---------- reading ----------
 
-  fileContent(node: FileNode): string {
+  /** The bytes on the virtual disk, whatever language the game is shown in. Hashes use this. */
+  rawContent(node: FileNode): string {
     if (node.data !== undefined) return node.data;
     if (node.ref) return this.hooks.resolve(node.ref);
     return '';
+  }
+
+  fileContent(node: FileNode): string {
+    const raw = this.rawContent(node);
+    return this.hooks.localize ? this.hooks.localize(raw) : raw;
   }
 
   size(node: VNode): number {
@@ -240,7 +248,7 @@ export class VFS {
       if (existing.k === 'd') throw new VfsError('EISDIR');
       if (existing.k !== 'f') throw new VfsError('EINVAL');
       if (!this.can(existing, id, 2)) throw new VfsError('EACCES');
-      const prior = opts.append ? this.fileContent(existing) : '';
+      const prior = opts.append ? this.rawContent(existing) : '';
       existing.data = prior + data;
       delete existing.ref;
       delete existing.tag;
@@ -331,7 +339,7 @@ export class VFS {
     if (n.k !== 'f') throw new VfsError('EINVAL');
     if (!this.can(n, id, 4)) throw new VfsError('EACCES');
     this.hooks.onRead?.(normalize(src));
-    this.write(dest, this.fileContent(n), id, { mode: n.mode & 0o777 & ~0o022 });
+    this.write(dest, this.rawContent(n), id, { mode: n.mode & 0o777 & ~0o022 });
     const out = this.stat(dest, id) as FileNode;
     if (n.ref) {
       out.ref = n.ref;

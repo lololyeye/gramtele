@@ -54,6 +54,10 @@ export function validateSave(raw: unknown): { state: GameState } | { error: stri
   const fs = o.fs as Record<string, DirNode> | undefined;
   if (fs && !Object.values(fs).every((root) => validNode(root) && root.k === 'd')) return { error: 'Save contains an invalid filesystem.' };
   const base = newState();
+  for (const t of Object.values(o.threads ?? {})) {
+    if (t.pinnedMessages !== undefined && !Array.isArray(t.pinnedMessages)) t.pinnedMessages = undefined;
+    for (const m of t.messages) if (m.reactions !== undefined && !Array.isArray(m.reactions)) m.reactions = undefined;
+  }
   const state: GameState = { ...base, ...o, settings: { ...DEFAULT_SETTINGS, ...(o.settings ?? {}), sound: { ...DEFAULT_SETTINGS.sound, ...(o.settings?.sound ?? {}) } }, seen: { ...base.seen, ...(o.seen ?? {}) } } as GameState;
   return { state };
 }

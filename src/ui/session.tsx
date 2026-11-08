@@ -4,6 +4,7 @@
  */
 import { createContext, ReactNode, useContext, useEffect, useMemo, useSyncExternalStore } from 'react';
 import { GameEngine, newState } from '../game/engine';
+import { chooseLanguage, getLanguage, initLanguage, Language, LanguagePref, languagePref, tr } from '../i18n';
 import { KV, SaveStore, SlotId } from '../game/persistence';
 import type { GameState, ThreadId } from '../game/types';
 import { audio } from './audio';
@@ -32,6 +33,12 @@ function safeStorage(): KV {
   }
 }
 
+const browserLanguages = (): readonly string[] => (typeof navigator === 'undefined' ? [] : navigator.languages?.length ? navigator.languages : [navigator.language]);
+
+function applyDocumentLanguage(): void {
+  if (typeof document !== 'undefined') document.documentElement.lang = getLanguage();
+}
+
 /** Long-lived object behind the React tree. */
 export class Session {
   engine: GameEngine;
@@ -43,6 +50,15 @@ export class Session {
   missionFocus: string | null = null;
   drawerOpen = false;
   saveError: string | null = null;
+  /** Unsent text per conversation. */
+  drafts: Partial<Record<ThreadId, string>> = {};
+  /** On small screens: showing the conversation rather than the list. */
+  conversationOpen = false;
+  /** A message to scroll to the next time the conversation renders. */
+  pendingFocus: number | null = null;
+  /** Bumped whenever the language changes, so simulated pages can reload in it. */
+  language: Language;
+  private kv = safeStorage();
   private lineId = 1;
   private listeners = new Set<() => void>();
   private version = 0;
@@ -50,6 +66,9 @@ export class Session {
   private soundedToasts = 0;
 
   constructor(state: GameState = newState()) {
+    initLanguage(this.kv, browserLanguages());
+    this.language = getLanguage();
+    applyDocumentLanguage();
     this.engine = new GameEngine(state);
     this.attach();
   }
@@ -92,6 +111,21 @@ export class Session {
     for (const l of this.listeners) l();
   }
 
+  get languagePreference(): LanguagePref {
+    return languagePref(this.kv);
+  }
+  /** Applies a choice from Settings. "auto" goes back to following the browser. */
+  setLanguage(pref: LanguagePref) {
+    chooseLanguage(this.kv, pref, browserLanguages());
+    this.language = getLanguage();
+    applyDocumentLanguage();
+    this.notify();
+  }
+  /** Whether movement is welcome right now, for the few animations driven from code. */
+  motionOk(): boolean {
+    return document.documentElement.dataset.motion !== 'reduced';
+  }
+
   go(view: ViewId) {
     this.view = view;
     this.drawerOpen = false;
@@ -99,6 +133,7 @@ export class Session {
   }
   openThread(t: ThreadId) {
     this.thread = t;
+    this.conversationOpen = true;
     this.go('gramtele');
   }
   openMission(id: string) {
@@ -124,11 +159,11 @@ export class Session {
   autosave() {
     if (!this.engine.state.handle) return;
     const r = this.store.save('auto', this.engine.state);
-    this.saveError = r.ok ? null : r.error ?? 'Could not save.';
+    this.saveError = r.ok ? null : r.error ?? tr('Could not save.');
   }
   save(slot: SlotId) {
     const r = this.store.save(slot, this.engine.state);
-    this.saveError = r.ok ? null : r.error ?? 'Could not save.';
+    this.saveError = r.ok ? null : r.error ?? tr('Could not save.');
     this.notify();
     return r;
   }
@@ -162,12 +197,6 @@ export function useSession(): Session {
   if (!s) throw new Error('useSession outside SessionProvider');
   useSyncExternalStore(s.subscribe, s.snapshot);
   return s;
-}
-
-/** Formats a story-clock timestamp. */
-export function clock(at: number, withDate = false): string {
-  const iso = new Date(at).toISOString();
-  return withDate ? `${iso.slice(0, 10)} ${iso.slice(11, 16)}` : iso.slice(11, 16);
 }
 
 export function useReducedMotion(pref: 'auto' | 'on' | 'off'): boolean {

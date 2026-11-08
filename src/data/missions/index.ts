@@ -5,6 +5,8 @@ import { M05 } from './finale';
 export const MISSIONS: Mission[] = [M01, M02, M03, M04, M05];
 export const MISSION_BY_ID: Record<string, Mission> = Object.fromEntries(MISSIONS.map((m) => [m.id, m]));
 
+export { M01, M02, M03, M04, M05 };
+
 export const CHAPTERS: { n: number; title: string }[] = [
   { n: 0, title: 'The Invitation' },
   { n: 1, title: 'First Contact' },

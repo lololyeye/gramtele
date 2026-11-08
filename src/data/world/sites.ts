@@ -1,3 +1,5 @@
+import { getLanguage, tr, trn } from '../../i18n';
+import { localizeDocument } from '../../i18n/documents';
 import { html, staticSite, StaticPage, text } from '../../game/virtual-network/net';
 import type { SiteEnv, VRequest, VResponse, VSite } from '../../game/virtual-network/types';
 import { ALDRIC_PHOTO, BRASK_REPORT, HALDEN_REPORT, NEWSLETTER_2021, NX417_PRESS, RIDGE_PHOTO } from './documents';
@@ -61,8 +63,8 @@ const portalSite: VSite = {
   host: 'portal.nexus-labs.test',
   headers: [['Server', 'Werkzeug/2.0.1 Python/3.8.10'], ['X-Served-By', 'orion-edge-2']],
   handle(req) {
-    if (req.method === 'POST') return text(403, 'Staff network only.\n');
-    return html('<!doctype html><html><head><title>Nexus Staff Portal</title></head><body><h1>Nexus Labs Staff Portal</h1><p>Access is restricted to the staff network.</p></body></html>\n');
+    if (req.method === 'POST') return text(403, `${tr('Staff network only.')}\n`);
+    return html(localizeDocument('<!doctype html><html><head><title>Nexus Staff Portal</title></head><body><h1>Nexus Labs Staff Portal</h1><p>Access is restricted to the staff network.</p></body></html>\n'));
   },
 };
 
@@ -191,11 +193,11 @@ const archive: VSite = {
   handle(req, env) {
     if (req.path === '/submit' && req.method === 'POST') {
       const upload = req.files[0];
-      if (!upload) return text(400, 'archive: no file received. Use curl -F file=@dossier.tar http://archive.test/submit\n');
-      if (!upload.content.startsWith('GTDOSSIER')) return text(415, `archive: ${upload.filename} is not a sealed dossier. Run "dossier seal" first.\n`);
-      if (!/verified=true/.test(upload.content)) return text(400, 'archive: manifest hashes do not verify. We publish nothing we cannot verify.\n');
+      if (!upload) return text(400, `${tr('archive: no file received. Use curl -F file=@dossier.tar http://archive.test/submit')}\n`);
+      if (!upload.content.startsWith('GTDOSSIER')) return text(415, `${tr('archive: {file} is not a sealed dossier. Run "dossier seal" first.', { file: upload.filename })}\n`);
+      if (!/verified=true/.test(upload.content)) return text(400, `${tr('archive: manifest hashes do not verify. We publish nothing we cannot verify.')}\n`);
       env.signal('archive-submission');
-      return text(201, 'archive: received. Manifest verified. An editor will read this tonight.\nThank you. Please do not contact us from this address again.\n');
+      return text(201, `${tr('archive: received. Manifest verified. An editor will read this tonight.')}\n${tr('Thank you. Please do not contact us from this address again.')}\n`);
     }
     return archivePages.handle(req, env);
   },
@@ -209,14 +211,14 @@ const maps: VSite = {
   headers: [['Server', 'maps-frontend']],
   handle(req) {
     if (req.path !== '/' && req.path !== '/lookup') return text(404, 'not found\n');
-    const form = `<form action="/lookup" method="get"><label>Latitude <input name="lat"></label> <label>Longitude <input name="lon"></label> <button>Look up</button></form>`;
-    if (req.path === '/') return html(`<!doctype html><html><head><title>Maps</title><style>${MP_CSS}</style></head><body><main><h2>Maps</h2><p>Reverse geocoding. Decimal degrees.</p>${form}<p>Or: <code>curl "http://maps.test/lookup?lat=61.4821&amp;lon=14.3307"</code></p></main></body></html>\n`);
+    const form = `<form action="/lookup" method="get"><label>${tr('Latitude')} <input name="lat"></label> <label>${tr('Longitude')} <input name="lon"></label> <button>${tr('Look up')}</button></form>`;
+    if (req.path === '/') return html(`<!doctype html><html><head><title>${tr('Maps')}</title><style>${MP_CSS}</style></head><body><main><h2>${tr('Maps')}</h2><p>${tr('Reverse geocoding. Decimal degrees.')}</p>${form}<p>${tr('Or:')} <code>curl "http://maps.test/lookup?lat=61.4821&amp;lon=14.3307"</code></p></main></body></html>\n`);
     const lat = parseFloat(req.query.get('lat') ?? '');
     const lon = parseFloat(req.query.get('lon') ?? '');
-    if (Number.isNaN(lat) || Number.isNaN(lon)) return html(`<!doctype html><html><head><title>Maps</title><style>${MP_CSS}</style></head><body><main><p>Give a latitude and longitude in decimal degrees.</p>${form}</main></body></html>\n`);
+    if (Number.isNaN(lat) || Number.isNaN(lon)) return html(`<!doctype html><html><head><title>${tr('Maps')}</title><style>${MP_CSS}</style></head><body><main><p>${tr('Give a latitude and longitude in decimal degrees.')}</p>${form}</main></body></html>\n`);
     const near = (a: number, b: number) => Math.abs(lat - a) < 0.2 && Math.abs(lon - b) < 0.2;
-    const place = near(61.4821, 14.3307) ? 'Harrowmere, Vessen district. Jetty road, Lake Vessen, 840 m from the village.' : near(47.1, 9.2) ? 'Aldric ridge, northern traverse.' : 'Open country. No named place nearby.';
-    return html(`<!doctype html><html><head><title>${place}</title><style>${MP_CSS}</style></head><body><main><h2>Result</h2><p><b>${lat}, ${lon}</b></p><p>${place}</p>${form}</main></body></html>\n`);
+    const place = tr(near(61.4821, 14.3307) ? 'Harrowmere, Vessen district. Jetty road, Lake Vessen, 840 m from the village.' : near(47.1, 9.2) ? 'Aldric ridge, northern traverse.' : 'Open country. No named place nearby.');
+    return html(`<!doctype html><html><head><title>${place}</title><style>${MP_CSS}</style></head><body><main><h2>${tr('Result')}</h2><p><b>${lat}, ${lon}</b></p><p>${place}</p>${form}</main></body></html>\n`);
   },
 };
 
@@ -255,20 +257,34 @@ function buildIndex(sources: [string, Record<string, StaticPage>][]): IndexDoc[]
   return out;
 }
 
-function searchSite(index: IndexDoc[]): VSite {
+function searchSite(sources: [string, Record<string, StaticPage>][]): VSite {
+  // Indexed per language; a query also matches the original wording, so both languages find the same pages.
+  const english = buildIndex(sources);
+  const localized = new Map<string, IndexDoc[]>();
+  const indexNow = () => {
+    const lang = getLanguage();
+    if (lang === 'en') return english;
+    let docs = localized.get(lang);
+    if (!docs) {
+      docs = buildIndex(sources.map(([h, pages]) => [h, Object.fromEntries(Object.entries(pages).map(([k, p]) => [k, { ...p, body: localizeDocument(p.body) }]))]));
+      localized.set(lang, docs);
+    }
+    return docs;
+  };
   return {
     host: 'search.test',
     headers: [['Server', 'search-frontend']],
     handle(req: VRequest, env: SiteEnv): VResponse {
       if (req.path !== '/' && req.path !== '/search') return text(404, 'not found\n');
       const q = (req.query.get('q') ?? '').trim();
-      const form = `<form action="/search" method="get"><input name="q" value="${esc(q)}" placeholder="search the public web"> <button>Search</button></form>`;
+      const form = `<form action="/search" method="get"><input name="q" value="${esc(q)}" placeholder="${tr('search the public web')}"> <button>${tr('Search')}</button></form>`;
       if (!q) {
-        return html(`<!doctype html><html><head><title>Search</title><style>${SE_CSS}</style></head><body><main><h2>Search</h2>${form}<p><small>Operators: <code>"exact phrase"</code> <code>site:trailtalk.test</code> <code>filetype:pdf</code> <code>-exclude</code></small></p></main></body></html>\n`);
+        return html(`<!doctype html><html><head><title>${tr('Search')}</title><style>${SE_CSS}</style></head><body><main><h2>${tr('Search')}</h2>${form}<p><small>${tr('Operators:')} <code>"exact phrase"</code> <code>site:trailtalk.test</code> <code>filetype:pdf</code> <code>-exclude</code></small></p></main></body></html>\n`);
       }
       const tokens = [...q.matchAll(/(-?)(site:|filetype:)?(?:"([^"]+)"|(\S+))/g)];
-      const hits = index.filter((d) => {
-        const hay = `${d.title} ${d.text}`.toLowerCase();
+      const index = indexNow();
+      const hits = index.filter((d, i) => {
+        const hay = `${d.title} ${d.text} ${english[i].title} ${english[i].text}`.toLowerCase();
         return tokens.every((t) => {
           const neg = t[1] === '-';
           const op = t[2];
@@ -290,7 +306,7 @@ function searchSite(index: IndexDoc[]): VSite {
           return `<div class="r"><a href="${d.url}">${esc(d.title)}</a><div class="u">${d.url}</div><div class="s">${esc(d.text.slice(at, at + 180))}</div></div>`;
         })
         .join('');
-      return html(`<!doctype html><html><head><title>${esc(q)} - Search</title><style>${SE_CSS}</style></head><body><main>${form}<p><small>${hits.length} result${hits.length === 1 ? '' : 's'}</small></p>${results}</main></body></html>\n`);
+      return html(`<!doctype html><html><head><title>${esc(q)} - ${tr('Search')}</title><style>${SE_CSS}</style></head><body><main>${form}<p><small>${trn('{n} result', '{n} results', hits.length)}</small></p>${results}</main></body></html>\n`);
     },
   };
 }
@@ -303,5 +319,5 @@ export function buildSites(): VSite[] {
   const publicSites = [gramtele, lindgate, blackwell, orion, nexus, trailtalk, folio, gamersden, registry];
   const sources: [string, Record<string, StaticPage>][] = publicSites.map((s) => [s.host, s.pages]);
   sources.push(['archive.test', archivePages.pages]);
-  return [...publicSites, relay, portalSite, archive, maps, searchSite(buildIndex(sources))];
+  return [...publicSites, relay, portalSite, archive, maps, searchSite(sources)];
 }

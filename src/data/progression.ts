@@ -123,7 +123,7 @@ export const ENDINGS: Record<EndingId, EndingText> = {
       'The contract was two pages long. The salary was real. They gave you a new device, and on the first of the month you were added to a rota. You were good at it. They had taught you well.',
       'The closure date on your row was changed to someone else\'s. You did not look up whose.',
       s.flags.read_notes41 ? 'You are the one who wiped the home directory on the old workbench image. You checked for hidden files first. You found the note, and you kept it, and you do not know why.' : 'Somebody wiped the home directory on your old workbench image. It went back into the pool.',
-      `It is a quiet evening. A new handle has asked something sharp in the open channel, about why a cached answer outlives its record. You open a conversation. ${s.handle ? `You are not ${s.handle} any more.` : ''} You type the way you were taught: correct punctuation, no hurry.`,
+      'It is a quiet evening. A new handle has asked something sharp in the open channel, about why a cached answer outlives its record. You open a conversation. You are not {handle} any more. You type the way you were taught: correct punctuation, no hurry.',
       '"Good evening. You asked a good question. Most people do not ask why."',
     ],
   },

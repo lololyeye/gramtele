@@ -91,7 +91,7 @@ async function playToFinale(gaveLocation: boolean): Promise<Player> {
   p.settle();
   expect(p.g.choicesFor('ECHO')?.choices.map((c) => c.id)).toEqual(['what']);
   p.g.takeAttachment('ECHO', p.g.state.threads.ECHO.messages[0].id);
-  expect(await p.run('base64 -d ~/Downloads/fragment_01.txt')).toBe('do you know what you looked for');
+  expect(await p.run('base64 -d ~/Downloads/fragment_01.txt')).toMatch(/^(do you know what you looked for|sais-tu ce que tu cherchais)$/);
   p.say('ECHO', 'decoded');
   expect(p.g.state.threads.ECHO.messages.at(-1)?.text).toContain(gaveLocation ? 'garden' : 'why');
 
@@ -178,7 +178,7 @@ async function finaleUntilSealed(p: Player) {
   p.sub('closure_date', '2026-11-05');
   p.say('VANTA', 'help');
   await p.run('mkdir ~/dossier');
-  expect(await p.run('dossier seal')).toContain('Cannot seal');
+  expect(await p.run('dossier seal')).toMatch(/Cannot seal|Scellement impossible/);
   await p.run('cp /missions/m03/nexus_archive.db ~/dossier/');
   await p.run('cp ~/Downloads/gramtele_meta.db ~/dossier/');
   await p.run('curl -s -o ~/dossier/press.pdf http://nexus-labs.test/news/nx417-topline.pdf');
@@ -186,9 +186,9 @@ async function finaleUntilSealed(p: Player) {
   await p.run('curl -s -o ~/dossier/halden.pdf http://orion-security.test/reports/halden-freight.pdf');
   // Editing an exhibit breaks it.
   await p.run('echo tampered >> ~/dossier/press.pdf');
-  expect(await p.run('dossier seal')).toContain('Cannot seal');
+  expect(await p.run('dossier seal')).toMatch(/Cannot seal|Scellement impossible/);
   await p.run('curl -s -o ~/dossier/press.pdf http://nexus-labs.test/news/nx417-topline.pdf');
-  expect(await p.run('dossier seal')).toContain('Sealed');
+  expect(await p.run('dossier seal')).toMatch(/Sealed|scellé/);
   expect(p.g.state.sealed).toBe(true);
   p.settle();
 }
@@ -198,9 +198,9 @@ describe('full playthrough', () => {
     const p = await playToFinale(false);
     await finaleUntilSealed(p);
     await p.run('cd ~ && echo scraps > notes.txt');
-    expect(await p.run('curl -s -F file=@notes.txt http://archive.test/submit')).toContain('not a sealed dossier');
+    expect(await p.run('curl -s -F file=@notes.txt http://archive.test/submit')).toMatch(/not a sealed dossier|pas un dossier scellé/);
     expect(p.g.state.ending).toBeNull();
-    expect(await p.run('curl -s -F file=@dossier.tar http://archive.test/submit')).toContain('received');
+    expect(await p.run('curl -s -F file=@dossier.tar http://archive.test/submit')).toMatch(/received|reçu/);
     expect(p.g.state.ending).toBe<EndingId>('record');
     p.expectDone('m05');
     expect(p.g.state.skills.length).toBeGreaterThan(10);

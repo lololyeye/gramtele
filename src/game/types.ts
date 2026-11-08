@@ -111,6 +111,13 @@ export interface ChatMessage {
   attachment?: Attachment;
   invite?: string;
   taken?: boolean;
+  reactions?: Reaction[];
+}
+
+export interface Reaction {
+  emoji: string;
+  /** 'me', or the handle of whoever reacted. */
+  from: string;
 }
 
 export interface ThreadState {
@@ -118,6 +125,12 @@ export interface ThreadState {
   unread: number;
   archived: boolean;
   visible: boolean;
+  pinned?: boolean;
+  muted?: boolean;
+  /** Messages pinned to the top of the conversation, oldest first. */
+  pinnedMessages?: number[];
+  /** How many things the player has said off script. Picks the next small-talk line. */
+  smalltalk?: number;
 }
 
 export interface PendingMessage {
@@ -308,6 +321,8 @@ export interface JournalEntry {
   at: number;
   kind: JournalKind;
   text: string;
+  /** Values for {placeholders} in text. Kept apart so an entry can be shown in any language. */
+  vars?: Record<string, string>;
 }
 
 export interface Toast {

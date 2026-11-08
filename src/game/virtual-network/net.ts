@@ -1,3 +1,4 @@
+import { localizeDocument } from '../../i18n/documents';
 /**
  * The simulated internet. Every lookup and request is answered from in-memory
  * registries. This module has no access to fetch, sockets, or anything else that
@@ -257,7 +258,7 @@ export function staticSite(host: string, pages: Record<string, StaticPage>, opts
       return {
         status: page.status ?? 200,
         headers: [['Content-Type', page.type ?? 'text/html; charset=utf-8'], ...(page.headers ?? [])],
-        body: page.body,
+        body: localizeDocument(page.body),
         tag: page.tag,
       };
     },

@@ -1,0 +1,74 @@
+/* Design tokens. Every colour, size and duration in the interface comes from here. */
+:root {
+  color-scheme: dark;
+
+  /* Surfaces: deep graphite, lifted in steps. Never pure black. */
+  --bg-0: #101315;
+  --bg-1: #15191c;
+  --bg-2: #1a1f23;
+  --bg-3: #21272c;
+  --bg-4: #2a3137;
+  --bg-5: #343c43;
+  --glass: rgb(30 36 41 / 78%);
+  --line: rgb(226 235 232 / 8%);
+  --line-strong: rgb(226 235 232 / 15%);
+
+  /* Text */
+  --text-1: #eef1ec;
+  --text-2: #bcc4c0;
+  --text-3: #8b9591;
+  --text-4: #66706c;
+
+  /* Verdigris: Gramtele's own colour, the patina on old copper. Amber and rust support it. */
+  --accent: #5cc4a4;
+  --accent-strong: #7ad8bb;
+  --accent-soft: rgb(92 196 164 / 14%);
+  --accent-line: rgb(92 196 164 / 38%);
+  --on-accent: #08231b;
+  --amber: #e0ae57;
+  --amber-soft: rgb(224 174 87 / 14%);
+  --danger: #e2776a;
+  --danger-soft: rgb(226 119 106 / 14%);
+  --info: #86b5d8;
+
+  /* Bubbles */
+  --bubble-in: #232a2f;
+  --bubble-out: linear-gradient(165deg, #1f6152, #17493f);
+  --bubble-out-solid: #1b5548;
+
+  /* Type */
+  --font-ui: 'Hanken Grotesk Variable', 'Hanken Grotesk', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, 'Cascadia Mono', Consolas, monospace;
+  --fs-xs: 0.72rem;
+  --fs-sm: 0.8125rem;
+  --fs-md: 0.9375rem;
+  --fs-lg: 1.0625rem;
+  --fs-xl: 1.3125rem;
+  --fs-2xl: 1.75rem;
+  --fs-3xl: 2.5rem;
+
+  /* Space and shape */
+  --r-xs: 6px;
+  --r-sm: 9px;
+  --r-md: 12px;
+  --r-lg: 16px;
+  --r-xl: 20px;
+  --shadow-1: 0 1px 2px rgb(0 0 0 / 30%);
+  --shadow-2: 0 6px 20px rgb(0 0 0 / 32%);
+  --shadow-3: 0 18px 50px rgb(0 0 0 / 46%);
+  --ring: 0 0 0 2px var(--bg-1), 0 0 0 4px var(--accent);
+
+  /* Layout */
+  --nav-w: 224px;
+  --nav-w-collapsed: 68px;
+  --list-w: 336px;
+  --details-w: 340px;
+  --tabbar-h: 58px;
+
+  /* Motion */
+  --ease-out: cubic-bezier(0.2, 0.75, 0.25, 1);
+  --ease-soft: cubic-bezier(0.35, 0.1, 0.25, 1);
+  --t-fast: 120ms;
+  --t-med: 200ms;
+  --t-slow: 320ms;
+}
