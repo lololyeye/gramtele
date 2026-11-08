@@ -78,7 +78,8 @@ function Toasts() {
       seen.current.add(t);
       window.setTimeout(() => g.dismissToast(t.id), t.kind === 'message' ? 7000 : 5500);
     }
-  }, [g, g.toasts]);
+    // No dependency list: new toasts are pushed onto the same array, so its identity does not change.
+  });
 
   return (
     <div className="toasts" role="status" aria-live="polite">
