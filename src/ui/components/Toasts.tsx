@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { tr } from '../../i18n';
+import { T } from '../../i18n';
 import type { Toast } from '../../game/types';
 import { useSession } from '../session';
 import { Avatar } from './Avatar';
@@ -48,7 +48,7 @@ export function Toasts() {
               {t.body && <span>{t.body}</span>}
             </span>
           </button>
-          <IconButton icon="close" size={14} label={tr('Dismiss')} onClick={() => g.dismissToast(t.id)} />
+          <IconButton icon="close" size={14} label={T('dismiss')} onClick={() => g.dismissToast(t.id)} />
         </div>
       ))}
     </div>

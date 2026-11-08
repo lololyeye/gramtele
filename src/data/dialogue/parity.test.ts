@@ -1,8 +1,10 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { CHARACTERS } from '../characters';
-import { lineIn, lineKey, lineKeys, setLanguage, tr } from '../../i18n';
+import { lineIn, lineKey, lineKeys, registerLines, setLanguage, tr } from '../../i18n';
+import { EN_UI } from '../../i18n/en/ui';
 import '../../i18n/fr';
-import { ENDINGS } from '../progression';
+import { CHAPTERS, MISSIONS } from '../missions';
+import { ACHIEVEMENTS, ENDINGS, EVIDENCE, SKILL_NODES, SKILL_TITLES } from '../progression';
 import { BEATS } from '.';
 import { FILE_COUNTS, GROUP_SPEAKERS, SMALL_COUNTS } from './smalltalk';
 import type { Tier } from '../reputation';
@@ -69,8 +71,31 @@ function neededKeys(): string[] {
     }
   }
   add('§misc.export_preview');
+  for (const k of writtenKeys()) out.add(k);
   return [...out];
 }
+
+/** Every key a mission, a record screen or the interface asks for. */
+function writtenKeys(): string[] {
+  const out = new Set<string>();
+  const walk = (v: unknown) => {
+    if (typeof v === 'string') { if (v.startsWith('§')) out.add(v.slice(1)); }
+    else if (Array.isArray(v)) v.forEach(walk);
+    else if (v && typeof v === 'object') Object.values(v).forEach(walk);
+  };
+  walk(MISSIONS);
+  walk(CHAPTERS);
+  walk(SKILL_TITLES);
+  walk(SKILL_NODES);
+  walk(ACHIEVEMENTS);
+  walk(EVIDENCE);
+  for (const k of Object.keys(EN_UI)) out.add(`ui.${k}`);
+  return [...out];
+}
+
+const missionKeys = () => writtenKeys().filter((k) => k.startsWith('missions.'));
+/** Not sentences a person reads as language: a number format, a handle-shaped mask. */
+const FORMAT = /^(x\.x\.x\.x|c-0000|d-0000)$/;
 
 /** Things a player might act on or compare: they must be identical in both languages. */
 function clues(text: string): string[] {
@@ -108,14 +133,51 @@ describe('both languages tell the same story', () => {
 
   it('never ships a French line identical to the English one, unless there is nothing to translate', () => {
     const neutral = /^(\W*|NULL|Sessions|Blackwell Holdings, Special Engagements\.|bWFuIGJhc2U2NA==)$/;
-    const same = neededKeys().filter((k) => en(k) === fr(k) && !neutral.test(en(k)) && !isEncoded(en(k)) && !k.startsWith('e2_fragment'));
+    // One word, or a list of commands: "Terminal", "JOIN", "sudo -l" are the same in both.
+    const literal = /^[\p{L}\d .,+/()_{}-]*$/u;
+    const same = neededKeys().filter((k) => en(k) === fr(k) && !neutral.test(en(k)) && !isEncoded(en(k)) && !k.startsWith('e2_fragment') && !FORMAT.test(en(k)))
+      .filter((k) => !((k.startsWith('ui.') || k.includes('.resources.') || k.includes('.hints.') || k.startsWith('skills.') || k.startsWith('nodes.') || k.includes('.title') || k.includes('.term') || k.includes('.review.concepts') || k.includes('.placeholder')) && (literal.test(en(k)) && en(k).split(' ').length <= 6 || k.includes('.hints.'))));
     expect(same).toEqual([]);
   });
 
   it('refuses to fall back to another language when a line is missing', () => {
+    registerLines('en', new Map([['only.in.english', 'English only']]));
     setLanguage('fr');
-    expect(() => tr('§nothing.here')).toThrow(/Missing fr line/);
+    expect(() => tr('§only.in.english')).toThrow(/Missing fr line/);
     expect(tr('something the player typed')).toBe('something the player typed');
+  });
+});
+
+describe('missions say the same thing in both languages', () => {
+  /** What a player copies from a hint or compares with a tool: if it differs, they fail for a reason that is not theirs. */
+  function literals(text: string): string[] {
+    const found = text.match(/~?\/[\w./-]+|(?<![\w-])--?[a-zA-Z][\w-]*|\bsubmit [a-z_]+(?: [\w./-]*[\d.][\w./-]*)?|\b(?:SELECT|FROM|JOIN|WHERE|GROUP BY|ORDER BY|DESC|DISTINCT|COUNT|SUM|DELETE|REFERENCES|FATAL|NOPASSWD)\b|\.(?:schema|tables|headers|mode)\b|\b[a-z_]+\.(?:txt|db|conf|jpg|pdf|html|tar)\b|\b(?:uid|sev|lat|lon)=[\w.]*/g) ?? [];
+    return [...new Set(found)].sort();
+  }
+
+  it('hints, notes and error messages keep every command, path, flag and query', () => {
+    const different = missionKeys()
+      .filter((k) => /\.(hints\.\d|note|wrong|text|right)$/.test(k))
+      .filter((k) => literals(en(k)).join('|') !== literals(fr(k)).join('|'))
+      .map((k) => `${k}\n  en: ${literals(en(k))}\n  fr: ${literals(fr(k))}`);
+    expect(different).toEqual([]);
+  });
+
+  it('assignment files keep their paths and commands, line by line', () => {
+    const different = missionKeys().filter((k) => k.includes('.files.')).filter((k) => literals(en(k)).join('|') !== literals(fr(k)).join('|'));
+    expect(different).toEqual([]);
+  });
+
+  it('the desk says vous; only journal decisions and ROOTLESS say tu', () => {
+    const tu = /(?<!\p{L})(tu|t['’]|ton|ta|tes|toi)(?!\p{L})/iu;
+    const flagged = missionKeys().filter((k) => !k.endsWith('.decision') && !k.includes('m05.files') && tu.test(fr(k))).map((k) => `${k}: ${fr(k)}`);
+    expect(flagged).toEqual([]);
+  });
+
+  it('nothing written for the player assumes their gender', () => {
+    const assumed = /(?<!\p{L})(vous (êtes|vous êtes) \p{L}+é|engagé|orienté|situé|relié|parti de)(?!\p{L})/iu;
+    const flagged = writtenKeys().filter((k) => assumed.test(fr(k))).map((k) => `${k}: ${fr(k)}`);
+    expect(flagged).toEqual([]);
   });
 });
 

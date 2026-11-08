@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { tr } from '../../i18n';
+import { tr, T } from '../../i18n';
 import type { ChatMessage, Reaction, ThreadId } from '../../game/types';
 import { Avatar } from '../components/Avatar';
 import { Icon, IconButton } from '../components/Icon';
@@ -35,13 +35,13 @@ function ReactionRow({ reactions, onToggle }: { reactions: Reaction[]; onToggle:
     const e = counts.get(r.emoji) ?? { n: 0, mine: false, who: [] };
     e.n++;
     e.mine ||= r.from === 'me';
-    e.who.push(r.from === 'me' ? tr('You') : r.from);
+    e.who.push(r.from === 'me' ? T('you_2') : r.from);
     counts.set(r.emoji, e);
   }
   return (
     <div className="reactions">
       {[...counts].map(([emoji, e]) => (
-        <button key={emoji} type="button" className={e.mine ? 'reaction mine' : 'reaction'} title={e.who.join(', ')} aria-pressed={e.mine} aria-label={tr('Reaction {emoji} from {who}', { emoji, who: e.who.join(', ') })} onClick={() => onToggle(emoji)}>
+        <button key={emoji} type="button" className={e.mine ? 'reaction mine' : 'reaction'} title={e.who.join(', ')} aria-pressed={e.mine} aria-label={T('reaction_emoji_from_who', { emoji, who: e.who.join(', ') })} onClick={() => onToggle(emoji)}>
           <span>{emoji}</span>{e.n > 1 && <small>{e.n}</small>}
         </button>
       ))}
@@ -77,10 +77,10 @@ export function MessageBubble({ m, thread, layout }: { m: ChatMessage; thread: T
           {m.attachment && <AttachmentCard m={m} thread={thread} />}
           {m.invite && <MissionCard id={m.invite} />}
           <span className="msg-meta">
-            {pinned && <span className="msg-pin" title={tr('Pinned')}><Icon name="pin" size={12} /></span>}
+            {pinned && <span className="msg-pin" title={T('pinned')}><Icon name="pin" size={12} /></span>}
             <time dateTime={new Date(m.at).toISOString()}>{timeOf(m.at)}</time>
             {mine && (
-              <span className={layout.read ? 'receipt read' : 'receipt'} role="img" aria-label={layout.read ? tr('Read') : tr('Delivered')} title={layout.read ? tr('Read') : tr('Delivered')}>
+              <span className={layout.read ? 'receipt read' : 'receipt'} role="img" aria-label={layout.read ? T('read') : T('delivered')} title={layout.read ? T('read') : T('delivered')}>
                 <Icon name={layout.read ? 'checks' : 'check'} size={15} />
               </span>
             )}
@@ -89,10 +89,10 @@ export function MessageBubble({ m, thread, layout }: { m: ChatMessage; thread: T
         {!!m.reactions?.length && <ReactionRow reactions={m.reactions} onToggle={react} />}
       </div>
       <div className={`msg-actions ${picker ? 'open' : ''}`}>
-        <IconButton icon="smile" size={17} label={tr('React to this message')} active={picker} onClick={() => setPicker(!picker)} />
-        <IconButton icon="pin" size={17} label={pinned ? tr('Unpin this message') : tr('Pin this message')} active={!!pinned} onClick={() => g.togglePinnedMessage(thread, m.id)} />
+        <IconButton icon="smile" size={17} label={T('react_to_this_message')} active={picker} onClick={() => setPicker(!picker)} />
+        <IconButton icon="pin" size={17} label={pinned ? T('unpin_this_message') : T('pin_this_message')} active={!!pinned} onClick={() => g.togglePinnedMessage(thread, m.id)} />
         {picker && (
-          <div className="reaction-picker" role="group" aria-label={tr('Choose a reaction')}>
+          <div className="reaction-picker" role="group" aria-label={T('choose_a_reaction')}>
             {REACTIONS.map((e, i) => <button key={e} type="button" style={{ animationDelay: `${i * 22}ms` }} aria-label={e} onClick={() => react(e)}>{e}</button>)}
           </div>
         )}

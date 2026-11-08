@@ -1,4 +1,4 @@
-import { localeTag, tr } from '../i18n';
+import { localeTag, tr, T } from '../i18n';
 import { CHARACTERS } from '../data/characters';
 import type { ThreadId } from '../game/types';
 
@@ -14,15 +14,15 @@ export function timeOf(at: number): string {
 
 export function dayLabel(at: number, now: number): string {
   const diff = dayIndex(now) - dayIndex(at);
-  if (diff === 0) return tr('Today');
-  if (diff === 1) return tr('Yesterday');
+  if (diff === 0) return T('today');
+  if (diff === 1) return T('yesterday');
   return fmt({ day: 'numeric', month: 'long', year: 'numeric' }).format(at);
 }
 
 export function listStamp(at: number, now: number): string {
   const diff = dayIndex(now) - dayIndex(at);
   if (diff === 0) return timeOf(at);
-  if (diff === 1) return tr('Yesterday');
+  if (diff === 1) return T('yesterday');
   if (diff < 7) return fmt({ weekday: 'short' }).format(at);
   return fmt({ day: '2-digit', month: '2-digit' }).format(at);
 }
@@ -36,11 +36,11 @@ export function realDateTime(at: number): string {
 }
 
 export function lastSeenLabel(lastSeen: number | null, now: number): string {
-  if (lastSeen === null) return tr('offline');
+  if (lastSeen === null) return T('offline');
   const diff = dayIndex(now) - dayIndex(lastSeen);
-  if (diff === 0) return tr('last seen today at {time}', { time: timeOf(lastSeen) });
-  if (diff === 1) return tr('last seen yesterday at {time}', { time: timeOf(lastSeen) });
-  return tr('last seen {date}', { date: fmt({ day: 'numeric', month: 'short' }).format(lastSeen) });
+  if (diff === 0) return T('last_seen_today_at_time', { time: timeOf(lastSeen) });
+  if (diff === 1) return T('last_seen_yesterday_at_time', { time: timeOf(lastSeen) });
+  return T('last_seen_date', { date: fmt({ day: 'numeric', month: 'short' }).format(lastSeen) });
 }
 
 export function senderName(from: string): string {

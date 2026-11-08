@@ -47,7 +47,7 @@ Chaque mission se termine par une revue : ce que tu as fait, pourquoi la méthod
 - **Internet simulé** : `dig`, `nmap`, `curl`, `whois`, `traceroute`, un navigateur intégré et une carte qui grandit avec tes découvertes.
 - **Gramtele** : une vraie messagerie à trois colonnes. Bulles groupées, accusés de lecture, réactions, épingles, recherche, pièces jointes, cartes de mission, messages libres et réponses suggérées, profils que tu complètes en enquêtant.
 - **Réputation** : un classement public, des rangs, et un milieu qui te répond différemment selon ce que tu as prouvé.
-- **Deux langues** : les dialogues sont écrits séparément en français et en anglais, avec les mêmes choix et les mêmes indices, sans traduction automatique. La langue suit ton navigateur et se change dans les réglages.
+- **Deux langues** : les dialogues, les missions et l'interface sont écrits séparément en français et en anglais, avec les mêmes choix et les mêmes indices, sans traduction automatique. La langue suit ton navigateur et se change dans les réglages.
 - **Progression** : les compétences s'obtiennent en les démontrant, pas en les achetant.
 - **Sauvegardes** : automatique, trois emplacements, export et import.
 - **Confort** : tout au clavier, adapté au mobile, mouvement réduit, taille de texte réglable, son optionnel et coupé par défaut.
@@ -81,7 +81,7 @@ npm run dev
 | `npm run dev` | Serveur de développement |
 | `npm test` | Tests, dont une partie complète jouée de bout en bout |
 | `npm run build` | Vérification des types et build de production |
-| `npm run i18n:check` | Lignes manquantes, indices qui divergent et voix des personnages, dans les deux langues |
+| `npm run i18n:check` | Textes manquants, indices et commandes qui divergent, voix des personnages, dans les deux langues |
 
 ## Organisation du code
 
@@ -90,8 +90,9 @@ src/
   game/   moteur sans React : shell, système de fichiers, réseau virtuel, SQL, sauvegardes
   data/   contenu : missions, sites, bases de données
     dialogue/  script.ts (la logique), en.ts et fr.ts (les textes, écrits séparément)
+    missions/  early.ts et finale.ts (la logique), en.ts et fr.ts (les textes)
   ui/     interface React : messagerie, vues, styles
-  i18n/   langues : détection, catalogue français de l'interface et des missions
+  i18n/   langues : détection, interface en anglais et en français, catalogue des pages web et du manuel
 docs/     bible de l'histoire (attention, elle dévoile tout), voix des personnages, localisation
 ```
 

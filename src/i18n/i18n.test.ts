@@ -10,8 +10,10 @@ import { ALL_COMMANDS, HELP_GROUPS } from '../game/commands';
 import { VFS } from '../game/filesystem/vfs';
 import type { GameState } from '../game/types';
 import { documentStrings, localizeDocument } from './documents';
+import { EN_UI } from './en/ui';
 import './fr';
-import { chooseLanguage, detectLanguage, getLanguage, hasTranslation, initLanguage, languagePref, setLanguage, tr, trn } from './index';
+import { FR_UI } from './fr/ui';
+import { chooseLanguage, detectLanguage, getLanguage, hasTranslation, initLanguage, languagePref, setLanguage, T, Tn, tr, ui } from './index';
 
 afterEach(() => setLanguage('en'));
 
@@ -63,9 +65,49 @@ describe('translation', () => {
   it('passes the player\'s own words through and fills in variables', () => {
     setLanguage('fr');
     expect(tr('something the player typed')).toBe('something the player typed');
-    expect(tr('Level {n}', { n: 3 })).toBe('Niveau 3');
-    expect(trn('{n} result', '{n} results', 1)).toBe('1 résultat');
-    expect(trn('{n} result', '{n} results', 4)).toBe('4 résultats');
+    expect(T('level_n', { n: 3 })).toBe('Niveau 3');
+    expect(Tn('n_result', 'n_results', 1)).toBe('1 résultat');
+    expect(Tn('n_result', 'n_results', 4)).toBe('4 résultats');
+  });
+
+  it('follows the language for a stored key, without storing any sentence', () => {
+    const stored = ui('saved');
+    setLanguage('en');
+    expect(tr(stored)).toBe('Saved');
+    setLanguage('fr');
+    expect(tr(stored)).toBe('Enregistré');
+  });
+});
+
+describe('the interface', () => {
+  const sources = () => {
+    const files: string[] = [];
+    const walk = (d: string) => {
+      for (const n of readdirSync(d)) {
+        const p = join(d, n);
+        if (statSync(p).isDirectory()) { if (!p.includes('i18n')) walk(p); }
+        else if (/\.tsx?$/.test(n) && !n.includes('.test.')) files.push(p);
+      }
+    };
+    walk('src');
+    return files.map((f) => readFileSync(f, 'utf8')).join('\n');
+  };
+
+  it('uses every key it has', () => {
+    const src = sources();
+    expect(Object.keys(EN_UI).filter((k) => !src.includes(`'${k}'`))).toEqual([]);
+  });
+
+  it('keeps the same variables in both languages', () => {
+    const vars = (s: string) => (s.match(/\{\w+\}/g) ?? []).sort().join();
+    const keys = Object.keys(EN_UI) as (keyof typeof EN_UI)[];
+    expect(keys.filter((k) => vars(EN_UI[k]) !== vars(FR_UI[k]))).toEqual([]);
+  });
+
+  it('has no sentence left in a tr() call that a dataset should own', () => {
+    const src = sources();
+    const leftovers = [...src.matchAll(/(?<![\w.])tr\(\s*'((?:[^'\\\n]|\\.)*)'/g)].map((m) => m[1]);
+    expect(leftovers.filter((s) => (Object.values(EN_UI) as string[]).includes(s))).toEqual([]);
   });
 });
 
@@ -128,7 +170,6 @@ describe('the French catalog is complete', () => {
       for (const m of src.matchAll(new RegExp(String.raw`(?<![\w.])tr\(\s*(${lit})`, 'g'))) found.push(unquote(m[1]));
       for (const m of src.matchAll(new RegExp(String.raw`(?<![\w.])trn\(\s*(${lit})\s*,\s*(${lit})`, 'g'))) found.push(unquote(m[1]), unquote(m[2]));
     }
-    expect(found.length).toBeGreaterThan(300);
     expect(missing(found)).toEqual([]);
   });
 

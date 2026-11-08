@@ -248,7 +248,8 @@ export class VFS {
       if (existing.k === 'd') throw new VfsError('EISDIR');
       if (existing.k !== 'f') throw new VfsError('EINVAL');
       if (!this.can(existing, id, 2)) throw new VfsError('EACCES');
-      const prior = opts.append ? this.rawContent(existing) : '';
+      // Appending turns a file into the player's own: it keeps the text they were reading, not a language key.
+      const prior = opts.append ? this.fileContent(existing) : '';
       existing.data = prior + data;
       delete existing.ref;
       delete existing.tag;

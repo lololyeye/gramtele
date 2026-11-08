@@ -1,4 +1,4 @@
-import { tr } from '../../i18n';
+import { tr, T } from '../../i18n';
 import { ROOT } from '../filesystem/vfs';
 import type { Command, FullScreen } from '../terminal/types';
 import { isoTime, pad, padEnd, parseArgs } from './args';
@@ -313,28 +313,28 @@ export function renderMan(cmd: Command): string {
   const m = cmd.man;
   const out: string[] = [];
   const name = cmd.name.toUpperCase();
-  out.push(`${name}(1)${' '.repeat(26)}${tr('Workbench Manual')}${' '.repeat(26)}${name}(1)`, '');
-  out.push(tr('NAME'), `       ${cmd.name} - ${tr(m.name)}`, '');
-  out.push(tr('SYNOPSIS'));
+  out.push(`${name}(1)${' '.repeat(26)}${T('workbench_manual')}${' '.repeat(26)}${name}(1)`, '');
+  out.push(T('name'), `       ${cmd.name} - ${tr(m.name)}`, '');
+  out.push(T('synopsis'));
   for (const s of m.synopsis) out.push(`       ${s}`);
-  out.push('', tr('DESCRIPTION'));
+  out.push('', T('description'));
   out.push(...wrap(tr(m.description), 70).map((l) => `       ${l}`));
   if (m.options?.length) {
-    out.push('', tr('OPTIONS'));
+    out.push('', T('options'));
     for (const [k, v] of m.options) {
       out.push(`       ${k}`);
       out.push(...wrap(tr(v), 62).map((l) => `              ${l}`));
     }
   }
   if (m.examples?.length) {
-    out.push('', tr('EXAMPLES'));
+    out.push('', T('examples'));
     for (const [k, v] of m.examples) {
       out.push(`       $ ${k}`);
       out.push(...wrap(tr(v), 62).map((l) => `              ${l}`));
     }
   }
   if (m.why) {
-    out.push('', tr('WHY IT MATTERS'));
+    out.push('', T('why_it_matters'));
     out.push(...wrap(tr(m.why), 70).map((l) => `       ${l}`));
   }
   return out.join('\n') + '\n';
@@ -374,7 +374,7 @@ const man: Command = {
       return 16;
     }
     const text = renderMan(c);
-    if (ctx.isTty) ctx.sh.fullscreen = pagerFor(tr('Manual page {name}(1)', { name: n }), text);
+    if (ctx.isTty) ctx.sh.fullscreen = pagerFor(T('manual_page_name_1', { name: n }), text);
     else ctx.out(text);
     return 0;
   },
@@ -390,7 +390,7 @@ const help: Command = {
       if (!c || (c.tool && !ctx.sh.host.isToolUnlocked(c.tool))) return ctx.fail(`no help topics match '${n}'`);
       ctx.line(`${c.name}: ${tr(c.man.name)}`);
       for (const s of c.man.synopsis) ctx.line(`  ${s}`);
-      ctx.line(tr('See: man {name}', { name: c.name }));
+      ctx.line(T('see_man_name', { name: c.name }));
       return 0;
     }
     const groups = (ctx.sh.host.services.helpGroups as [string, string[]][] | undefined) ?? [];
@@ -404,7 +404,7 @@ const help: Command = {
       ctx.line(`  ${shown.join('  ')}`);
     }
     ctx.line('');
-    ctx.line(tr('man COMMAND gives the full manual. Pipes (|), redirection (> >> <), &&, || and ; all work.'));
+    ctx.line(T('man_command_gives_the_full'));
     return 0;
   },
 };

@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { CHAPTERS } from '../data/missions';
 import { ENDINGS } from '../data/progression';
 import { levelFor } from '../game/engine';
-import { tr } from '../i18n';
+import { tr, T } from '../i18n';
 import { MobileNav, NavSidebar, useViews } from './components/NavSidebar';
 import { Toasts } from './components/Toasts';
 import { Icon, IconButton } from './components/Icon';
@@ -23,34 +23,34 @@ function AssignmentPanel() {
   const next = m && p ? m.objectives.find((o) => !p.objectives.includes(o.id)) : null;
   const open = g.openAnswers();
   return (
-    <aside className="term-side" aria-label={tr('Current assignment')}>
+    <aside className="term-side" aria-label={T('current_assignment')}>
       {m && p ? (
         <section>
-          <div className="eyebrow">{tr('Now')}</div>
+          <div className="eyebrow">{T('now')}</div>
           <h2>{tr(m.title)}</h2>
           <ol className="mini-objs">
             {m.objectives.map((o) => (
               <li key={o.id} className={p.objectives.includes(o.id) ? 'done' : o === next ? 'next' : ''}>
-                {p.objectives.includes(o.id) && <span className="sr">{tr('Complete')}: </span>}
+                {p.objectives.includes(o.id) && <span className="sr">{T('complete')}: </span>}
                 {tr(o.text)}
               </li>
             ))}
           </ol>
-          {open.length > 0 && <p className="side-note">{tr('File findings with the command below, or in Missions.')} <code>submit</code></p>}
-          <button className="link" onClick={() => s.openMission(m.id)}>{tr('Open the brief')}</button>
+          {open.length > 0 && <p className="side-note">{T('file_findings_with_the_command')} <code>submit</code></p>}
+          <button className="link" onClick={() => s.openMission(m.id)}>{T('open_the_brief')}</button>
         </section>
       ) : (
         <section>
-          <div className="eyebrow">{tr('Now')}</div>
-          <p>{tr('No active assignment. Work comes through Gramtele.')}</p>
-          <button className="link" onClick={() => s.go('gramtele')}>{tr('Open Gramtele')}</button>
+          <div className="eyebrow">{T('now')}</div>
+          <p>{T('no_active_assignment_work_comes')}</p>
+          <button className="link" onClick={() => s.go('gramtele')}>{T('open_gramtele')}</button>
         </section>
       )}
       {note && man?.why && (
         <section className="field-note">
-          <div className="eyebrow">{tr('Field note: {name}', { name: note.command })}</div>
+          <div className="eyebrow">{T('field_note_name', { name: note.command })}</div>
           <p>{tr(man.why)}</p>
-          <p className="side-note"><code>man {note.command}</code> · {tr('the full manual')}</p>
+          <p className="side-note"><code>man {note.command}</code> · {T('the_full_manual')}</p>
         </section>
       )}
     </aside>
@@ -69,20 +69,20 @@ function EndingScreen({ onClose, onQuit }: { onClose: () => void; onQuit: () => 
   return (
     <div className="ending" role="dialog" aria-modal="true" aria-label={tr(e.title)}>
       <article>
-        <div className="eyebrow">{tr('Ending')}</div>
+        <div className="eyebrow">{T('ending')}</div>
         <h1>{tr(e.title)}</h1>
         <p className="ending-epigraph">{tr(e.epigraph)}</p>
         {e.paragraphs(st).map((p) => <p key={p}>{tr(p, { handle: st.handle })}</p>)}
         <dl className="ledger">
-          <div><dt>{tr('Assignments')}</dt><dd>{finished}</dd></div>
-          <div><dt>{tr('Commands')}</dt><dd>{stats.commands}</dd></div>
-          <div><dt>{tr('Level')}</dt><dd>{levelFor(st.xp)}</dd></div>
-          <div><dt>{tr('Skills proven')}</dt><dd>{st.skills.length}</dd></div>
+          <div><dt>{T('assignments')}</dt><dd>{finished}</dd></div>
+          <div><dt>{T('commands')}</dt><dd>{stats.commands}</dd></div>
+          <div><dt>{T('level')}</dt><dd>{levelFor(st.xp)}</dd></div>
+          <div><dt>{T('skills_proven')}</dt><dd>{st.skills.length}</dd></div>
         </dl>
-        <p className="muted">{tr('Five endings exist. Other saves can reach the others, and your decisions change how each one reads.')}</p>
+        <p className="muted">{T('five_endings_exist_other_saves')}</p>
         <div className="row">
-          <button ref={done} className="btn" onClick={onClose}>{tr('Keep exploring the workbench')}</button>
-          <button className="btn-quiet" onClick={onQuit}>{tr('Back to title')}</button>
+          <button ref={done} className="btn" onClick={onClose}>{T('keep_exploring_the_workbench')}</button>
+          <button className="btn-quiet" onClick={onQuit}>{T('back_to_title')}</button>
         </div>
       </article>
     </div>
@@ -100,12 +100,12 @@ function ViewBar() {
   const chTitle = CHAPTERS.find((c) => c.n === chapter)?.title;
   return (
     <header className="view-bar">
-      <span className="view-bar-chapter">{chTitle ? tr('Chapter {n}: {title}', { n: chapter, title: tr(chTitle) }) : 'Gramtele'}</span>
+      <span className="view-bar-chapter">{chTitle ? T('chapter_n_heading', { n: chapter, title: tr(chTitle) }) : 'Gramtele'}</span>
       {m && p ? (
         <button className="view-bar-mission" onClick={() => s.openMission(m.id)}>
           <Icon name="target" size={15} /> {tr(m.title)} <span>{p.objectives.length}/{m.objectives.length}</span>
         </button>
-      ) : <span className="view-bar-mission quiet">{tr('No active assignment')}</span>}
+      ) : <span className="view-bar-mission quiet">{T('no_active_assignment')}</span>}
     </header>
   );
 }
@@ -160,7 +160,7 @@ export function GameShell({ onQuit }: { onQuit: () => void }) {
 
   return (
     <div className={`app ${inConversation ? 'in-conversation' : ''}`}>
-      <a className="skip-link" href="#main">{tr('Skip to content')}</a>
+      <a className="skip-link" href="#main">{T('skip_to_content')}</a>
       <NavSidebar endingAvailable={!!st.ending} onEnding={() => setEndingOpen(true)} />
       <div className="stage">
         {s.view !== 'gramtele' && <ViewBar />}
@@ -184,10 +184,10 @@ export function GameShell({ onQuit }: { onQuit: () => void }) {
           <div className={s.view === 'network' ? 'view-page' : 'view-page hidden'}><NetworkView /></div>
         </main>
         {s.drawerOpen && s.view !== 'terminal' && (
-          <section className="drawer" aria-label={tr('Terminal drawer')}>
+          <section className="drawer" aria-label={T('terminal_drawer')}>
             <div className="drawer-head">
-              <span><Icon name="terminal" size={15} /> {tr('Terminal')}</span>
-              <IconButton icon="close" size={16} label={tr('Close the terminal drawer')} onClick={() => s.toggleDrawer()} />
+              <span><Icon name="terminal" size={15} /> {T('terminal')}</span>
+              <IconButton icon="close" size={16} label={T('close_the_terminal_drawer')} onClick={() => s.toggleDrawer()} />
             </div>
             <TerminalPane />
           </section>

@@ -7,28 +7,41 @@
 | Everything characters say, choices, journal decisions, profiles, endings | `src/data/dialogue/en.ts`, `fr.ts` | Two independent datasets, same keys, no shared sentences |
 | Who speaks, when, what a choice changes | `src/data/dialogue/script.ts` | Logic only: not one word of dialogue |
 | Encoded files (ECHO's fragments, kelpie's invoice) | `src/data/dialogue/fragments.ts` | ASCII plaintext per language, so terminal tools decode them cleanly |
-| Mission instructions, reports, reviews, interface, web pages, man pages | English in `src/data/`, `src/game/`, `src/ui/`; French in `src/i18n/fr/` | Hand-written catalog looked up by the English string |
+| Mission briefs, objectives, hints, reports, reviews, skills, achievements, evidence | `src/data/missions/en.ts`, `fr.ts` | Two independent datasets, same keys |
+| What a mission checks, pays and accepts as an answer | `src/data/missions/early.ts`, `finale.ts`, `src/data/progression.ts` | Logic only. `bind.ts` fills in the keys |
+| Navigation, buttons, notifications, errors, settings, terminal messages | `src/i18n/en/ui.ts`, `src/i18n/fr/ui.ts` | Two independent tables. Code asks for `T('key')`; the type refuses a key that does not exist, and French must have them all |
+| Web pages and man pages (not yet separated) | English in `src/data/world/` and `src/game/commands/`; French in `src/i18n/fr/world.ts`, `man.ts` | Hand-written catalog looked up by the English string |
 
 There is no machine translation anywhere, at build time or at runtime.
 
-`src/i18n/fr/legacy-dialogue.json` exists only so that messages already stored in pre-v2 saves still show in French. Nothing new may read it.
+`src/i18n/fr/legacy-dialogue.json` exists only so that messages already stored in pre-v2 saves still show in French. Nothing new may read it. Version 3 saves store keys: on load, `migrateText` in the engine replaces English sentences in older journals, evidence and assignment files with their keys.
+
+Accepted answers live in the logic, so both languages accept the same ones, including French spellings such as « huit » or « mars 2025 ».
+
+The player's own text passes through untouched. A string starting with `§` that is a key in no language is theirs too.
 
 ## Missing text
 
-- A missing dialogue line never shows another language. `tr()` throws while developing and in tests; in production it logs an error and shows `[fr: key]`.
+- A missing line never shows another language. `tr()` throws while developing and in tests; in production it logs an error and shows `[fr: key]`.
 - `npm run i18n:check` lists every missing or unused line, per language. It also runs as part of `npm test`.
-- Catalog strings (missions, interface) are checked by `src/i18n/i18n.test.ts`.
+- A missing interface key does not compile.
+- Catalog strings (web pages, man pages) are checked by `src/i18n/i18n.test.ts`.
 
 ## What the checks enforce
 
 `src/data/dialogue/parity.test.ts`:
 
-- Both languages have exactly the keys the script needs.
+- Both languages have exactly the keys the script, the missions and the interface need.
 - Clues match: `.test` domains, device ids, contractor numbers, `NX-` ids and every figure (prices must match what the mission pays).
 - No French line is identical to its English one, unless nothing in it can be translated.
 - Voice rules: ROOTLESS has no accents in French and no apostrophes or full stops in English. NULL and ECHO punctuate and use no emoji (except the night shift clue, which must stay). VANTA is lower case with her tic. MOTH capitalises and never uses an emoji.
 - French address: NULL and ECHO say *vous*; VANTA, MOTH, ROOTLESS, kelpie and ostrich_farm say *tu*.
-- A word list catches French that assumes the player's gender. It is a safety net, not a guarantee.
+- A word list catches French that assumes the player's gender, in dialogue, missions and interface. It is a safety net, not a guarantee.
+- Hints, notes, error messages and assignment files keep every command, path, flag, query and `submit` value: the player copies them.
+- The desk says *vous* in mission text. Only journal decisions and ROOTLESS's note say *tu*.
+- Interface texts keep the same `{variables}` in both languages, and no key goes unused.
+
+Text quoted from a site or a tool must match what that site or tool shows in the same language. The checks cannot see this: read it. Database contents and tool output stay in English in both languages, so a mission quotes them as they appear (« crisis readiness », "scheduled 2026-11-05").
 
 ## Scene review
 
@@ -50,11 +63,15 @@ Personality wins over literal accuracy. The goal is the same intent and equal qu
 | Scene | Written EN+FR | Checks pass | Author read-through | Native-speaker read |
 |---|---|---|---|---|
 | All scenes in `script.ts` | yes | yes | yes | **not yet** |
+| Missions 1 to 5 | yes | yes | yes | **not yet** |
+| Interface | yes | yes | yes | **not yet** |
 
 French slang in particular dates quickly and deserves a read by someone who lives in that community. Mark scenes here as they are reviewed.
 
-## Adding a line
+## Adding text
 
-1. Add the beat, message slot or choice to `script.ts`.
-2. Write it in `en.ts` and `fr.ts`.
-3. `npm run i18n:check`.
+- **A line of dialogue:** add the beat, message slot or choice to `script.ts`, then write it in `dialogue/en.ts` and `dialogue/fr.ts`.
+- **Mission text:** add the logic to the mission, then write it in `missions/en.ts` and `missions/fr.ts`.
+- **Interface text:** add a key to `i18n/en/ui.ts`. The compiler then asks for it in `i18n/fr/ui.ts`. Use `T('key')`, or `ui('key')` in a constant or anything saved.
+
+Then `npm run i18n:check`.

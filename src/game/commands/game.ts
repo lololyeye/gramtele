@@ -1,5 +1,5 @@
 import type { FileNode } from '../filesystem/vfs';
-import { tr, trn } from '../../i18n';
+import { T, Tn } from '../../i18n';
 import type { CmdCtx, Command } from '../terminal/types';
 import { splitLines } from './args';
 import { sha256 } from './forensic';
@@ -48,13 +48,13 @@ const submit: Command = {
     if (!key) {
       const open = a.openAnswers();
       if (!open.length) {
-        ctx.line(tr('Nothing outstanding on this assignment.'));
+        ctx.line(T('nothing_outstanding_on_this_assignment'));
         return 0;
       }
-      ctx.line(tr('Outstanding findings:'));
+      ctx.line(T('outstanding_findings'));
       for (const o of open) ctx.line(`  ${o.key.padEnd(18)} ${o.prompt}`);
       ctx.line('');
-      ctx.line(tr('File with: submit KEY VALUE'));
+      ctx.line(T('file_with_submit_key_value'));
       return 0;
     }
     if (!rest.length) return ctx.fail(`usage: submit ${key} VALUE`);
@@ -93,7 +93,7 @@ const evidence: Command = {
     if (!sub || sub === 'list') {
       const rows = a.evidenceRows();
       if (!rows.length) {
-        ctx.line(tr('Locker is empty. Use: evidence add FILE'));
+        ctx.line(T('locker_is_empty_use_evidence'));
         return 0;
       }
       for (const r of rows) ctx.line(`${r.id.padEnd(22)} ${(r.hash ?? '-').slice(0, 16).padEnd(17)} ${r.title}`);
@@ -103,26 +103,26 @@ const evidence: Command = {
       if (!file) return ctx.fail('usage: evidence add FILE');
       const p = ctx.sh.resolvePath(file);
       const n = ctx.fs.stat(p, ctx.id);
-      if (n.k !== 'f') return ctx.fail(tr('{file}: not a regular file', { file }));
+      if (n.k !== 'f') return ctx.fail(T('file_not_a_regular_file', { file }));
       ctx.fs.read(p, ctx.id);
       const hash = sha256(ctx.fs.rawContent(n as FileNode));
       const res = a.collectEvidence((n as FileNode).tag, p, hash);
-      ctx.line(res.added ? `${tr('Collected: {title}', { title: res.title })}\nsha256 ${hash}` : `${res.title}\nsha256 ${hash}`);
+      ctx.line(res.added ? `${T('collected_title', { title: res.title })}\nsha256 ${hash}` : `${res.title}\nsha256 ${hash}`);
       return 0;
     }
     if (sub === 'verify') {
       if (!file) return ctx.fail('usage: evidence verify FILE');
       const p = ctx.sh.resolvePath(file);
       const n = ctx.fs.stat(p, ctx.id);
-      if (n.k !== 'f') return ctx.fail(tr('{file}: not a regular file', { file }));
+      if (n.k !== 'f') return ctx.fail(T('file_not_a_regular_file', { file }));
       ctx.fs.read(p, ctx.id);
       const hash = sha256(ctx.fs.rawContent(n as FileNode));
       const row = a.evidenceRows().find((x) => x.hash === hash);
       if (row) {
-        ctx.line(tr('{file}: OK, matches locker entry "{title}"', { file, title: row.title }));
+        ctx.line(T('file_ok_matches_locker_entry', { file, title: row.title }));
         return 0;
       }
-      ctx.line(tr("{file}: NO MATCH. This file's content is not in your locker.", { file }));
+      ctx.line(T('file_no_match_this_file', { file }));
       return 1;
     }
     return ctx.fail(`unknown subcommand: ${sub}`);
@@ -155,19 +155,19 @@ const dossier: Command = {
     const present = new Map(files.filter((f) => f.node.tag).map((f) => [f.node.tag!, f.path]));
     const required = a.dossierRequired();
     if (sub === 'status') {
-      ctx.line(`~/dossier: ${trn('{n} file', '{n} files', files.length)}`);
+      ctx.line(`~/dossier: ${Tn('n_file', 'n_files', files.length)}`);
       for (const r of required) {
         const hit = present.get(r.tag);
         ctx.line(`  [${hit ? 'x' : ' '}] ${r.title}${hit ? `  (${hit.split('/').pop()})` : ''}`);
       }
       const untagged = files.filter((f) => !f.node.tag);
-      if (untagged.length) ctx.line(`  ${tr('note: {n} file(s) carry no exhibit tag: edited copies, or your own notes. They travel, but prove nothing.', { n: untagged.length })}`);
+      if (untagged.length) ctx.line(`  ${T('note_n_file_s_carry', { n: untagged.length })}`);
       return 0;
     }
     if (sub === 'seal') {
       const missing = required.filter((r) => !present.has(r.tag));
       if (missing.length) {
-        ctx.line(trn('Cannot seal. Missing {n} exhibit:', 'Cannot seal. Missing {n} exhibits:', missing.length));
+        ctx.line(Tn('cannot_seal_missing_n_exhibit', 'cannot_seal_missing_n_exhibits', missing.length));
         for (const m of missing) ctx.line(`  - ${m.title}`);
         return 1;
       }
@@ -175,7 +175,7 @@ const dossier: Command = {
       const body = `GTDOSSIER\nverified=true\nexhibits=${required.length}\n${lines.join('\n')}\n`;
       ctx.fs.write(ctx.sh.resolvePath('~/dossier.tar'), body, ctx.id);
       a.markSealed([...present.keys()]);
-      ctx.line(tr('Sealed ~/dossier.tar ({files} files, {exhibits} exhibits verified).', { files: files.length, exhibits: required.length }));
+      ctx.line(T('sealed_dossier_tar_files_files', { files: files.length, exhibits: required.length }));
       return 0;
     }
     return ctx.fail(`unknown subcommand: ${sub}`);
@@ -193,7 +193,7 @@ const note: Command = {
     const t = ctx.argv.slice(1).join(' ');
     if (!t) return ctx.fail('usage: note TEXT...');
     api(ctx).addNote(t);
-    ctx.line(tr('Noted.'));
+    ctx.line(T('noted'));
     return 0;
   },
 };

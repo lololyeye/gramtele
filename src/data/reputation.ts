@@ -1,3 +1,4 @@
+import { ui } from '../i18n';
 import type { GameState } from '../game/types';
 
 /**
@@ -22,13 +23,13 @@ const TABLE_LOSSES: { flag: string; handle: string; loss: number }[] = [
 ];
 
 export const RANKS: { min: number; title: string }[] = [
-  { min: 0, title: 'Nobody' },
-  { min: 60, title: 'Noise' },
-  { min: 150, title: 'Known handle' },
-  { min: 300, title: 'Talked about' },
-  { min: 450, title: 'A problem' },
-  { min: 600, title: 'A reference' },
-  { min: 800, title: 'Untouchable' },
+  { min: 0, title: ui('nobody') },
+  { min: 60, title: ui('noise') },
+  { min: 150, title: ui('known_handle') },
+  { min: 300, title: ui('talked_about') },
+  { min: 450, title: ui('a_problem') },
+  { min: 600, title: ui('a_reference') },
+  { min: 800, title: ui('untouchable') },
 ];
 
 export type Tier = 'low' | 'mid' | 'high';

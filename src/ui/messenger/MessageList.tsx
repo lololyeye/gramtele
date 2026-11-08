@@ -1,6 +1,6 @@
 import { Fragment, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { CHARACTERS } from '../../data/characters';
-import { tr, trn } from '../../i18n';
+import { tr, T, Tn } from '../../i18n';
 import type { ThreadId } from '../../game/types';
 import { Avatar } from '../components/Avatar';
 import { Icon } from '../components/Icon';
@@ -18,7 +18,7 @@ export function TypingBubble({ thread }: { thread: ThreadId }) {
   return (
     <div className="msg in first last typing-row" aria-live="off">
       <div className="msg-avatar"><Avatar id={who} size={34} /></div>
-      <div className="bubble typing" role="img" aria-label={tr('{name} is typing', { name: tr(CHARACTERS[who as ThreadId]?.handle ?? who) })}><i /><i /><i /></div>
+      <div className="bubble typing" role="img" aria-label={T('name_is_typing', { name: tr(CHARACTERS[who as ThreadId]?.handle ?? who) })}><i /><i /><i /></div>
     </div>
   );
 }
@@ -80,11 +80,11 @@ export function MessageList({ thread, unreadFrom, query, focusId }: { thread: Th
         atBottom.current = near;
         setBelow(!near);
       }}>
-        <div className="messages-inner" role="log" aria-live="polite" aria-label={tr('Messages')}>
+        <div className="messages-inner" role="log" aria-live="polite" aria-label={T('messages')}>
           {!messages.length && (
             <div className="messages-empty">
               <Avatar id={thread} size={64} />
-              <p>{tr('No messages yet.')}</p>
+              <p>{T('no_messages_yet')}</p>
             </div>
           )}
           {messages.map((m, i) => {
@@ -96,7 +96,7 @@ export function MessageList({ thread, unreadFrom, query, focusId }: { thread: Th
             return (
               <Fragment key={m.id}>
                 {newDay && <div className="day-sep"><span>{dayLabel(m.at, g.now())}</span></div>}
-                {unreadStart && <div className="unread-sep"><span>{tr('Unread messages')}</span></div>}
+                {unreadStart && <div className="unread-sep"><span>{T('unread_messages')}</span></div>}
                 <MessageBubble m={m} thread={thread} layout={{
                   first: newDay || unreadStart || !sameRun(prev, m),
                   last: !sameRun(m, next) || unreadFrom === next?.id,
@@ -113,9 +113,9 @@ export function MessageList({ thread, unreadFrom, query, focusId }: { thread: Th
         </div>
       </div>
       {below && (
-        <button type="button" className="to-bottom" aria-label={tr('Jump to the latest message')} title={tr('Jump to the latest message')} onClick={() => toBottom(s.motionOk())}>
+        <button type="button" className="to-bottom" aria-label={T('jump_to_the_latest_message')} title={T('jump_to_the_latest_message')} onClick={() => toBottom(s.motionOk())}>
           <Icon name="down" />
-          {!!th?.unread && <span className="badge" aria-label={trn('{n} unread message', '{n} unread messages', th.unread)}>{th.unread}</span>}
+          {!!th?.unread && <span className="badge" aria-label={Tn('n_unread_message', 'n_unread_messages', th.unread)}>{th.unread}</span>}
         </button>
       )}
     </div>

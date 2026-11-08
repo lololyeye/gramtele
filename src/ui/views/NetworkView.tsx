@@ -1,6 +1,6 @@
 import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { HOSTS } from '../../data/world/network';
-import { tr, trn } from '../../i18n';
+import { tr, ui, T, Tn } from '../../i18n';
 import { Icon, IconButton } from '../components/Icon';
 import { timeOf } from '../format';
 import type { FetchResult } from '../../game/virtual-network/net';
@@ -70,7 +70,7 @@ function PageFrame({ src, onNavigate, onForm }: { src: string; onNavigate: (href
 
 // ---------- browser ----------
 
-const MODE_LABEL = { page: 'Page', source: 'Source', headers: 'Headers' } as const;
+const MODE_LABEL = { page: ui('page'), source: ui('source'), headers: ui('headers') } as const;
 
 interface Loaded {
   url: string;
@@ -153,13 +153,13 @@ function Browser() {
         e.preventDefault();
         void load(address);
       }}>
-        <IconButton icon="back" label={tr('Back')} disabled={!back.length} onClick={() => {
+        <IconButton icon="back" label={T('back')} disabled={!back.length} onClick={() => {
           const url = back.at(-1)!;
           setBack(back.slice(0, -1));
           if (page) setForward([page.url, ...forward]);
           void load(url, { push: false });
         }} />
-        <IconButton icon="next" label={tr('Forward')} disabled={!forward.length} onClick={() => {
+        <IconButton icon="next" label={T('forward')} disabled={!forward.length} onClick={() => {
           const url = forward[0];
           setForward(forward.slice(1));
           if (page) setBack([...back, page.url]);
@@ -167,24 +167,24 @@ function Browser() {
         }} />
         <label className="browser-address">
           <Icon name="globe" size={15} />
-          <input value={address} onChange={(e) => setAddress(e.target.value)} aria-label={tr('Address')} spellCheck={false} autoComplete="off" />
+          <input value={address} onChange={(e) => setAddress(e.target.value)} aria-label={T('address')} spellCheck={false} autoComplete="off" />
         </label>
-        <button type="submit" className="btn-quiet">{tr('Go')}</button>
+        <button type="submit" className="btn-quiet">{T('go')}</button>
       </form>
-      <div className="browser-tabs" role="tablist" aria-label={tr('Page view')}>
+      <div className="browser-tabs" role="tablist" aria-label={T('page_view')}>
         {(['page', 'source', 'headers'] as const).map((m) => (
           <button key={m} role="tab" aria-selected={mode === m} className={mode === m ? 'active' : ''} onClick={() => setMode(m)}>{tr(MODE_LABEL[m])}</button>
         ))}
         <span className="grow" />
-        {r?.ok && <span className="browser-status">{r.status} {r.statusText} {r.ip && tr('from {ip}', { ip: r.ip })}</span>}
+        {r?.ok && <span className="browser-status">{r.status} {r.statusText} {r.ip && T('from_ip', { ip: r.ip })}</span>}
         {r?.ok && r.status === 200 && (
-          <button className="btn-quiet small" onClick={() => setSaved(s.engine.saveDownload(filename, r.body ?? '', r.tag))}><Icon name="save" size={14} /> {tr('Save to workbench')}</button>
+          <button className="btn-quiet small" onClick={() => setSaved(s.engine.saveDownload(filename, r.body ?? '', r.tag))}><Icon name="save" size={14} /> {T('save_to_workbench')}</button>
         )}
       </div>
-      {saved && <div className="browser-saved" role="status">{tr('Saved to {path}', { path: saved.replace('/home/player', '~') })}</div>}
+      {saved && <div className="browser-saved" role="status">{T('saved_to_path', { path: saved.replace('/home/player', '~') })}</div>}
       <div className="browser-view">
-        {!page && <p className="browser-msg">{tr('Loading.')}</p>}
-        {r && !r.ok && <div className="browser-msg"><h3>{tr('This site cannot be reached')}</h3><p>{r.error}</p><p className="muted">{tr("This network only resolves the lab's own zones.")}</p></div>}
+        {!page && <p className="browser-msg">{T('loading')}</p>}
+        {r && !r.ok && <div className="browser-msg"><h3>{T('this_site_cannot_be_reached')}</h3><p>{r.error}</p><p className="muted">{T('this_network_only_resolves_the')}</p></div>}
         {r?.ok && mode === 'page' && (isHtml ? <PageFrame src={r.body ?? ''} onNavigate={(h) => void load(resolve(h))} onForm={onForm} /> : <pre className="browser-raw">{r.body}</pre>)}
         {r?.ok && mode === 'source' && <pre className="browser-raw">{r.body}</pre>}
         {r?.ok && mode === 'headers' && (
@@ -241,7 +241,7 @@ function NetworkMap({ onOpen }: { onOpen: () => void }) {
   return (
     <div className="netmap">
       <div className="netmap-canvas">
-        <svg width={layout.width} height={layout.height} role="img" aria-label={tr('Map of hosts you have discovered')}>
+        <svg width={layout.width} height={layout.height} role="img" aria-label={T('map_of_hosts_you_have')}>
           {[...layout.children.entries()].flatMap(([p, kids]) => kids.map((k) => {
             const a = layout.pos.get(p)!;
             const b = layout.pos.get(k)!;
@@ -258,10 +258,10 @@ function NetworkMap({ onOpen }: { onOpen: () => void }) {
             );
           })}
         </svg>
-        <p className="netmap-note">{tr('The map grows as you resolve, scan and visit.')} {trn('{n} host known.', '{n} hosts known.', known.length)}</p>
+        <p className="netmap-note">{T('the_map_grows_as_you')} {Tn('n_host_known', 'n_hosts_known', known.length)}</p>
       </div>
       <aside className="netmap-side">
-        <h3>{tr('Hosts')}</h3>
+        <h3>{T('hosts')}</h3>
         <ul className="host-list">
           {layout.hosts.map((h) => (
             <li key={h.name}><button className={sel === h.name ? 'active' : ''} onClick={() => setSel(h.name)}><span>{h.name}</span><code>{h.ip}</code></button></li>
@@ -271,19 +271,19 @@ function NetworkMap({ onOpen }: { onOpen: () => void }) {
           <div className="host-card">
             <h4>{selected.name}</h4>
             <dl className="kv">
-              <dt>{tr('Address')}</dt><dd><code>{selected.ip}</code></dd>
-              {selected.ptr && <><dt>{tr('Reverse DNS')}</dt><dd><code>{selected.ptr}</code></dd></>}
+              <dt>{T('address')}</dt><dd><code>{selected.ip}</code></dd>
+              {selected.ptr && <><dt>{T('reverse_dns')}</dt><dd><code>{selected.ptr}</code></dd></>}
             </dl>
             {scanned ? (
-              <ul className="ports">{selected.services.filter((x) => !x.filtered).map((x) => <li key={x.port}><code>{x.port}/{x.proto}</code> {x.name} {x.version}</li>)}{selected.services.some((x) => x.filtered) && <li className="muted">{tr('Some ports filtered.')}</li>}</ul>
-            ) : <p className="muted">{tr('Services unknown. Scan it with:')} <code>nmap -sV {selected.name}</code></p>}
-            {selected.services.some((x) => x.port === 80 || x.port === 443) && <button className="btn-quiet" onClick={() => { s.engine.state.browserHome = `http://${selected.name}/`; onOpen(); s.notify(); }}>{tr('Open in browser')}</button>}
+              <ul className="ports">{selected.services.filter((x) => !x.filtered).map((x) => <li key={x.port}><code>{x.port}/{x.proto}</code> {x.name} {x.version}</li>)}{selected.services.some((x) => x.filtered) && <li className="muted">{T('some_ports_filtered')}</li>}</ul>
+            ) : <p className="muted">{T('services_unknown_scan_it_with')} <code>nmap -sV {selected.name}</code></p>}
+            {selected.services.some((x) => x.port === 80 || x.port === 443) && <button className="btn-quiet" onClick={() => { s.engine.state.browserHome = `http://${selected.name}/`; onOpen(); s.notify(); }}>{T('open_in_browser')}</button>}
           </div>
         )}
-        <h3>{tr('Recent requests')}</h3>
+        <h3>{T('recent_requests')}</h3>
         <ul className="req-log">
           {st.httpLog.slice(-8).reverse().map((r, i) => <li key={`${r.at}-${i}`}><time>{timeOf(r.at)}</time> <b>{r.status}</b> {r.host}{r.path}</li>)}
-          {!st.httpLog.length && <li className="muted">{tr('None yet.')}</li>}
+          {!st.httpLog.length && <li className="muted">{T('none_yet')}</li>}
         </ul>
       </aside>
     </div>
@@ -294,9 +294,9 @@ export function NetworkView() {
   const [tab, setTab] = useState<'browser' | 'map'>('browser');
   return (
     <div className="network">
-      <div className="view-tabs" role="tablist" aria-label={tr('Network')}>
-        <button role="tab" aria-selected={tab === 'browser'} className={tab === 'browser' ? 'active' : ''} onClick={() => setTab('browser')}>{tr('Browser')}</button>
-        <button role="tab" aria-selected={tab === 'map'} className={tab === 'map' ? 'active' : ''} onClick={() => setTab('map')}>{tr('Map')}</button>
+      <div className="view-tabs" role="tablist" aria-label={T('network')}>
+        <button role="tab" aria-selected={tab === 'browser'} className={tab === 'browser' ? 'active' : ''} onClick={() => setTab('browser')}>{T('browser')}</button>
+        <button role="tab" aria-selected={tab === 'map'} className={tab === 'map' ? 'active' : ''} onClick={() => setTab('map')}>{T('map')}</button>
       </div>
       <div className={tab === 'browser' ? 'network-pane' : 'network-pane hidden'}><Browser /></div>
       {tab === 'map' && <div className="network-pane"><NetworkMap onOpen={() => setTab('browser')} /></div>}

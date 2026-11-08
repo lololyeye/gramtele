@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { THREAD_ORDER } from '../../data/characters';
 import { levelFor, xpForLevel } from '../../game/engine';
-import { getLanguage, tr, trn } from '../../i18n';
+import { getLanguage, tr, ui, T, Tn } from '../../i18n';
 import { timeOf } from '../format';
 import { Logo } from '../Intro';
 import { useSession, ViewId } from '../session';
@@ -15,15 +15,15 @@ interface ViewDef {
 }
 
 const VIEWS: { id: ViewId; label: string; icon: IconName }[] = [
-  { id: 'gramtele', label: 'Conversations', icon: 'chat' },
-  { id: 'terminal', label: 'Terminal', icon: 'terminal' },
+  { id: 'gramtele', label: ui('conversations'), icon: 'chat' },
+  { id: 'terminal', label: ui('terminal'), icon: 'terminal' },
   { id: 'missions', label: 'Missions', icon: 'target' },
-  { id: 'network', label: 'Network', icon: 'network' },
-  { id: 'evidence', label: 'Evidence', icon: 'evidence' },
-  { id: 'skills', label: 'Skills', icon: 'skills' },
-  { id: 'inventory', label: 'Inventory', icon: 'inventory' },
-  { id: 'journal', label: 'Journal', icon: 'journal' },
-  { id: 'settings', label: 'Settings', icon: 'settings' },
+  { id: 'network', label: ui('network'), icon: 'network' },
+  { id: 'evidence', label: ui('evidence'), icon: 'evidence' },
+  { id: 'skills', label: ui('skills'), icon: 'skills' },
+  { id: 'inventory', label: ui('inventory'), icon: 'inventory' },
+  { id: 'journal', label: ui('journal'), icon: 'journal' },
+  { id: 'settings', label: ui('settings'), icon: 'settings' },
 ];
 
 /** The nav entries in the current language. Alt+1 to Alt+9 follow this order. */
@@ -70,10 +70,10 @@ export function NavSidebar({ endingAvailable, onEnding }: { endingAvailable: boo
   }, [collapsed]);
 
   return (
-    <nav className={collapsed ? 'nav collapsed' : 'nav'} aria-label={tr('Main')}>
+    <nav className={collapsed ? 'nav collapsed' : 'nav'} aria-label={T('main')}>
       <div className="nav-brand">
-        <button type="button" className="nav-logo" onClick={() => s.go('gramtele')} aria-label={tr('Open Gramtele')}><Logo small /></button>
-        <IconButton icon="panel" size={18} className="nav-toggle" label={collapsed ? tr('Expand the sidebar') : tr('Collapse the sidebar')} onClick={() => setCollapsed(!collapsed)} />
+        <button type="button" className="nav-logo" onClick={() => s.go('gramtele')} aria-label={T('open_gramtele')}><Logo small /></button>
+        <IconButton icon="panel" size={18} className="nav-toggle" label={collapsed ? T('expand_the_sidebar') : T('collapse_the_sidebar')} onClick={() => setCollapsed(!collapsed)} />
       </div>
       <ul className="nav-items">
         {views.map((v, i) => {
@@ -87,8 +87,8 @@ export function NavSidebar({ endingAvailable, onEnding }: { endingAvailable: boo
                   {isChat && unread > 0 && collapsed && <span key={unread} className="badge dot-badge">{unread}</span>}
                 </span>
                 <span className="nav-label">{v.label}</span>
-                {isChat && unread > 0 && <span key={unread} className="badge" aria-label={trn('{n} unread message', '{n} unread messages', unread)}>{unread}</span>}
-                {isChat && !unread && waiting && <span className="awaiting" role="img" title={tr('Waiting for your answer')} aria-label={tr('Waiting for your answer')} />}
+                {isChat && unread > 0 && <span key={unread} className="badge" aria-label={Tn('n_unread_message', 'n_unread_messages', unread)}>{unread}</span>}
+                {isChat && !unread && waiting && <span className="awaiting" role="img" title={T('waiting_for_your_answer')} aria-label={T('waiting_for_your_answer')} />}
               </button>
             </li>
           );
@@ -96,22 +96,22 @@ export function NavSidebar({ endingAvailable, onEnding }: { endingAvailable: boo
       </ul>
       <div className="nav-foot">
         {endingAvailable && (
-          <button type="button" className="nav-item ending-link" title={tr('Read the ending')} onClick={onEnding}>
-            <span className="nav-icon"><Icon name="book" /></span><span className="nav-label">{tr('Read the ending')}</span>
+          <button type="button" className="nav-item ending-link" title={T('read_the_ending')} onClick={onEnding}>
+            <span className="nav-icon"><Icon name="book" /></span><span className="nav-label">{T('read_the_ending')}</span>
           </button>
         )}
-        <button type="button" className={s.drawerOpen ? 'nav-item on-soft' : 'nav-item'} disabled={s.view === 'terminal'} aria-pressed={s.drawerOpen} title={`${tr('Terminal drawer')} (Ctrl+\`)`} onClick={() => s.toggleDrawer()}>
+        <button type="button" className={s.drawerOpen ? 'nav-item on-soft' : 'nav-item'} disabled={s.view === 'terminal'} aria-pressed={s.drawerOpen} title={`${T('terminal_drawer')} (Ctrl+\`)`} onClick={() => s.toggleDrawer()}>
           <span className="nav-icon"><Icon name="down" /></span>
-          <span className="nav-label">{tr('Terminal drawer')}</span>
+          <span className="nav-label">{T('terminal_drawer')}</span>
         </button>
-        <div className="nav-me" title={tr('Level {n}', { n: level })}>
+        <div className="nav-me" title={T('level_n', { n: level })}>
           <Avatar id={st.handle || 'me'} size={36} />
           <div className="nav-me-text">
             <strong>{st.handle}</strong>
-            <span className="nav-me-meta">{tr('Level {n}', { n: level })} · {st.credits} cr</span>
-            <span className="meter thin" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(progress * 100)} aria-label={tr('Experience')}><i style={{ width: `${progress * 100}%` }} /></span>
+            <span className="nav-me-meta">{T('level_n', { n: level })} · {st.credits} cr</span>
+            <span className="meter thin" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(progress * 100)} aria-label={T('experience')}><i style={{ width: `${progress * 100}%` }} /></span>
           </div>
-          <time className="nav-clock" title={tr('Story time, UTC')}>{timeOf(g.now())}</time>
+          <time className="nav-clock" title={T('story_time_utc')}>{timeOf(g.now())}</time>
         </div>
       </div>
     </nav>
@@ -131,7 +131,7 @@ export function MobileNav({ endingAvailable, onEnding }: { endingAvailable: bool
   return (
     <>
       {more && (
-        <div className="more-sheet" role="dialog" aria-label={tr('More')} onClick={() => setMore(false)}>
+        <div className="more-sheet" role="dialog" aria-label={T('more')} onClick={() => setMore(false)}>
           <div className="more-panel" onClick={(e) => e.stopPropagation()}>
             <ul>
               {secondary.map((v) => (
@@ -141,12 +141,12 @@ export function MobileNav({ endingAvailable, onEnding }: { endingAvailable: bool
                   </button>
                 </li>
               ))}
-              {endingAvailable && <li><button type="button" onClick={() => { setMore(false); onEnding(); }}><Icon name="book" />{tr('Read the ending')}</button></li>}
+              {endingAvailable && <li><button type="button" onClick={() => { setMore(false); onEnding(); }}><Icon name="book" />{T('read_the_ending')}</button></li>}
             </ul>
           </div>
         </div>
       )}
-      <nav className="tabbar" aria-label={tr('Main')}>
+      <nav className="tabbar" aria-label={T('main')}>
         {views.filter((v) => PRIMARY.includes(v.id)).map((v) => (
           <button key={v.id} type="button" className={s.view === v.id ? 'on' : ''} aria-current={s.view === v.id ? 'page' : undefined} onClick={() => { setMore(false); if (v.id === 'gramtele' && s.view === 'gramtele') s.conversationOpen = false; s.go(v.id); }}>
             <span className="nav-icon">
@@ -159,7 +159,7 @@ export function MobileNav({ endingAvailable, onEnding }: { endingAvailable: bool
         ))}
         <button type="button" className={more || inSecondary ? 'on' : ''} aria-expanded={more} onClick={() => setMore(!more)}>
           <span className="nav-icon"><Icon name="more" /></span>
-          <span>{tr('More')}</span>
+          <span>{T('more')}</span>
         </button>
       </nav>
     </>

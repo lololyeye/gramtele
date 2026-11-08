@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { CHAPTERS, MISSION_BY_ID, MISSIONS } from '../../data/missions';
-import { tr, trn } from '../../i18n';
+import { tr, T, Tn } from '../../i18n';
 import { Icon } from '../components/Icon';
 import { ReportResult } from '../../game/engine';
 import type { AnswerDef, Mission, Objective, ReportDef, ReportSection } from '../../game/types';
@@ -33,7 +33,7 @@ function FindingField({ def, mission }: { def: AnswerDef; mission: Mission }) {
       <label className="finding-prompt" htmlFor={`f-${def.key}`}>{tr(def.prompt)}</label>
       <div className="finding-row">
         <input id={`f-${def.key}`} value={value} onChange={(e) => setValue(e.target.value)} placeholder={def.placeholder ? tr(def.placeholder) : undefined} autoComplete="off" spellCheck={false} />
-        <button className="btn-quiet" type="submit">{tr('File')}</button>
+        <button className="btn-quiet" type="submit">{T('file')}</button>
       </div>
       {msg && !msg.ok && <p className="finding-wrong" role="alert">{msg.text}</p>}
     </form>
@@ -48,15 +48,15 @@ function ObjectiveRow({ o, mission, n, disabled }: { o: Objective; mission: Miss
   const answers = [...(o.answer ? [o.answer] : []), ...(o.extraAnswers ?? [])];
   return (
     <li className={done ? 'obj done' : 'obj'}>
-      <span className="obj-mark" role="img" aria-label={done ? tr('Complete') : tr('Open')}>{done ? <Icon name="check" size={14} /> : n}</span>
+      <span className="obj-mark" role="img" aria-label={done ? T('complete') : T('open')}>{done ? <Icon name="check" size={14} /> : n}</span>
       <div className="obj-body">
         <p className="obj-text">{tr(o.text)}</p>
         {!done && o.note && <p className="obj-note">{tr(o.note)}</p>}
         {!disabled && answers.map((a) => <FindingField key={a.key} def={a} mission={mission} />)}
         {!done && !disabled && (
           <div className="hints">
-            {o.hints.slice(0, used).map((h, i) => <p key={h} className="hint"><b>{tr('Hint {n}.', { n: i + 1 })}</b> {tr(h)}</p>)}
-            {used < 3 && <button className="link" onClick={() => s.engine.revealHint(mission.id, o.id)}>{used ? tr('Another hint') : tr('I am stuck')}{used === 0 ? '' : ` (${used}/3)`}</button>}
+            {o.hints.slice(0, used).map((h, i) => <p key={h} className="hint"><b>{T('hint_n', { n: i + 1 })}</b> {tr(h)}</p>)}
+            {used < 3 && <button className="link" onClick={() => s.engine.revealHint(mission.id, o.id)}>{used ? T('another_hint') : T('i_am_stuck')}{used === 0 ? '' : ` (${used}/3)`}</button>}
           </div>
         )}
       </div>
@@ -80,8 +80,8 @@ function OrderSection({ sec, value, onChange }: { sec: Extract<ReportSection, { 
           <li key={id}>
             <span>{tr(it.text)}</span>
             <span className="order-btns">
-              <button type="button" onClick={() => move(i, -1)} disabled={i === 0} aria-label={tr('Move up: {text}', { text: tr(it.text) })}><Icon name="up" size={15} /></button>
-              <button type="button" onClick={() => move(i, 1)} disabled={i === value.length - 1} aria-label={tr('Move down: {text}', { text: tr(it.text) })}><Icon name="down" size={15} /></button>
+              <button type="button" onClick={() => move(i, -1)} disabled={i === 0} aria-label={T('move_up_text', { text: tr(it.text) })}><Icon name="up" size={15} /></button>
+              <button type="button" onClick={() => move(i, 1)} disabled={i === value.length - 1} aria-label={T('move_down_text', { text: tr(it.text) })}><Icon name="down" size={15} /></button>
             </span>
           </li>
         );
@@ -120,11 +120,11 @@ function ReportForm({ mission, def }: { mission: Mission; def: ReportDef }) {
           ))}
         </fieldset>
       ))}
-      <button className="btn" type="submit" disabled={!allAnswered}>{tr('File report')}</button>
-      {!allAnswered && <span className="form-note">{tr('Every section needs an answer.')}</span>}
+      <button className="btn" type="submit" disabled={!allAnswered}>{T('file_report')}</button>
+      {!allAnswered && <span className="form-note">{T('every_section_needs_an_answer')}</span>}
       {result && !result.passed && (
         <div className="report-result" role="alert">
-          <h4>{tr('The desk returned your report')}</h4>
+          <h4>{T('the_desk_returned_your_report')}</h4>
           <ul>
             {result.feedback.filter((f) => !f.correct).map((f) => <li key={f.section}><b>{tr(f.section)}.</b> {tr(f.text)}</li>)}
           </ul>
@@ -140,26 +140,26 @@ function Review({ m }: { m: Mission }) {
   const wrong = p.wrong.length;
   return (
     <section className="review">
-      <h3>{tr('Post-assignment review')}</h3>
+      <h3>{T('post_assignment_review')}</h3>
       <p>{tr(m.review.accomplished)}</p>
-      <h4>{tr('Concepts practised')}</h4>
+      <h4>{T('concepts_practised')}</h4>
       <ul>{m.review.concepts.map((c) => <li key={c}>{tr(c)}</li>)}</ul>
-      <h4>{tr('Why the method works')}</h4>
+      <h4>{T('why_the_method_works')}</h4>
       <p>{tr(m.review.why)}</p>
-      <h4>{tr('In a professional setting')}</h4>
+      <h4>{T('in_a_professional_setting')}</h4>
       <p>{tr(m.review.professional)}</p>
-      <h4>{tr('How to defend against this')}</h4>
+      <h4>{T('how_to_defend_against_this')}</h4>
       <ul>{m.review.defend.map((c) => <li key={c}>{tr(c)}</li>)}</ul>
-      <h4>{tr('Your run')}</h4>
+      <h4>{T('your_run')}</h4>
       <dl className="kv">
-        <dt>{tr('Commands')}</dt><dd>{p.commands}</dd>
-        <dt>{tr('Hints used')}</dt><dd>{Object.values(p.hints).reduce((a, b) => a + b, 0)}</dd>
-        <dt>{tr('Rejected findings')}</dt><dd>{wrong}</dd>
-        <dt>{tr('Discoveries')}</dt><dd>{tr('{done} of {total}', { done: p.optionals.length, total: m.optionals.length })}</dd>
-        {p.reportScore !== undefined && <><dt>{tr('Report')}</dt><dd>{Math.round(p.reportScore * 100)}%</dd></>}
+        <dt>{T('commands')}</dt><dd>{p.commands}</dd>
+        <dt>{T('hints_used')}</dt><dd>{Object.values(p.hints).reduce((a, b) => a + b, 0)}</dd>
+        <dt>{T('rejected_findings')}</dt><dd>{wrong}</dd>
+        <dt>{T('discoveries')}</dt><dd>{T('done_of_total', { done: p.optionals.length, total: m.optionals.length })}</dd>
+        {p.reportScore !== undefined && <><dt>{T('report')}</dt><dd>{Math.round(p.reportScore * 100)}%</dd></>}
       </dl>
       {p.optionals.length > 0 && <ul className="discoveries">{m.optionals.filter((o) => p.optionals.includes(o.id)).map((o) => <li key={o.id}><b>{tr(o.title)}.</b> {tr(o.text)}</li>)}</ul>}
-      {p.optionals.length < m.optionals.length && <p className="muted">{trn('{n} thing on this assignment went unnoticed. The files are still there.', '{n} things on this assignment went unnoticed. The files are still there.', m.optionals.length - p.optionals.length)}</p>}
+      {p.optionals.length < m.optionals.length && <p className="muted">{Tn('n_thing_on_this_assignment', 'n_things_on_this_assignment', m.optionals.length - p.optionals.length)}</p>}
     </section>
   );
 }
@@ -174,42 +174,42 @@ function Brief({ m }: { m: Mission }) {
   return (
     <article className="brief">
       <header className="brief-head">
-        <div className="eyebrow">{tr('Chapter {n}, {title}', { n: m.chapter, title: tr(m.chapterTitle) })}</div>
+        <div className="eyebrow">{T('chapter_n_title', { n: m.chapter, title: tr(m.chapterTitle) })}</div>
         <h2>{tr(m.title)}</h2>
         <div className="brief-meta">
-          <span>{tr('Contact {name}', { name: m.contact })}</span>
-          <span>{tr('Difficulty {n} of 5', { n: m.difficulty })}</span>
-          <span>{tr('About {n} min', { n: m.minutes })}</span>
-          <span>{tr('{n} credits', { n: m.rewards.credits })}</span>
+          <span>{T('contact_name', { name: m.contact })}</span>
+          <span>{T('difficulty_n_of_5', { n: m.difficulty })}</span>
+          <span>{T('about_n_min', { n: m.minutes })}</span>
+          <span>{T('n_credits', { n: m.rewards.credits })}</span>
         </div>
       </header>
       <div className="brief-prose">{m.intro.map((t) => <p key={t}>{tr(t)}</p>)}</div>
       {p.status === 'offered' && (
         <div className="callout">
-          <p>{tr('{name} is waiting for your answer on Gramtele.', { name: m.contact })}</p>
-          <button className="btn" onClick={() => s.openThread(m.contact)}>{tr('Go to the conversation')}</button>
+          <p>{T('name_is_waiting_for_your', { name: m.contact })}</p>
+          <button className="btn" onClick={() => s.openThread(m.contact)}>{T('go_to_the_conversation')}</button>
         </div>
       )}
       <div className="brief-cols">
         <section>
-          <h3>{tr('What this teaches')}</h3>
+          <h3>{T('what_this_teaches')}</h3>
           <dl className="concepts">{m.concepts.map((c) => <div key={c.term}><dt>{tr(c.term)}</dt><dd>{tr(c.text)}</dd></div>)}</dl>
         </section>
         <section>
-          <h3>{tr('Environment')}</h3>
+          <h3>{T('environment')}</h3>
           <p>{tr(m.environment)}</p>
-          <h3>{tr('Useful here')}</h3>
-          <ul className="res">{m.resources.map((r) => <li key={r}><code>{r}</code></li>)}</ul>
+          <h3>{T('useful_here')}</h3>
+          <ul className="res">{m.resources.map((r) => <li key={r}><code>{tr(r)}</code></li>)}</ul>
         </section>
       </div>
       {(active || done) && (
         <section>
-          <h3>{tr('Objectives')}</h3>
+          <h3>{T('objectives')}</h3>
           <ol className="objs">{m.objectives.map((o, i) => <ObjectiveRow key={o.id} o={o} n={i + 1} mission={m} disabled={o.check.kind === 'report'} />)}</ol>
         </section>
       )}
       {reportOpen && objectivesLeft === 0 && m.report && <ReportForm mission={m} def={m.report} />}
-      {reportOpen && objectivesLeft > 0 && <p className="muted">{tr('The report opens when the other objectives are complete.')}</p>}
+      {reportOpen && objectivesLeft > 0 && <p className="muted">{T('the_report_opens_when_the')}</p>}
       {done && <Review m={m} />}
     </article>
   );
@@ -232,8 +232,8 @@ export function MissionsView() {
   const unlocked = m && st.missions[m.id];
   return (
     <div className="split">
-      <nav className="split-nav" aria-label={tr('Assignments')}>
-        <h1 className="view-title">{tr('Assignments')}</h1>
+      <nav className="split-nav" aria-label={T('assignments')}>
+        <h1 className="view-title">{T('assignments')}</h1>
         {CHAPTERS.filter((c) => c.n > 0).map((c) => {
           const items = MISSIONS.filter((x) => x.chapter === c.n);
           return items.map((x) => {
@@ -242,8 +242,8 @@ export function MissionsView() {
               <button key={x.id} className={sel === x.id ? 'nav-item active' : 'nav-item'} disabled={!p} onClick={() => setSel(x.id)} aria-current={sel === x.id}>
                 <span className="nav-item-n">{c.n}</span>
                 <span>
-                  {p ? tr(x.title) : tr('Not yet offered')}
-                  <small>{p ? (p.status === 'active' ? tr('{done} of {total} objectives', { done: p.objectives.length, total: x.objectives.length }) : tr(STATUS_LABEL[p.status])) : tr(c.title)}</small>
+                  {p ? tr(x.title) : T('not_yet_offered')}
+                  <small>{p ? (p.status === 'active' ? T('done_of_total_objectives', { done: p.objectives.length, total: x.objectives.length }) : tr(STATUS_LABEL[p.status])) : tr(c.title)}</small>
                 </span>
               </button>
             );
@@ -251,7 +251,7 @@ export function MissionsView() {
         })}
       </nav>
       <div className="split-main">
-        {m && unlocked ? <Brief key={m.id} m={m} /> : <div className="empty"><Icon name="target" size={34} /><h2>{tr('No assignment yet')}</h2><p>{tr('Work arrives through Gramtele. Check your conversations.')}</p><button className="btn-quiet" onClick={() => s.go('gramtele')}>{tr('Open Gramtele')}</button></div>}
+        {m && unlocked ? <Brief key={m.id} m={m} /> : <div className="empty"><Icon name="target" size={34} /><h2>{T('no_assignment_yet')}</h2><p>{T('work_arrives_through_gramtele_check')}</p><button className="btn-quiet" onClick={() => s.go('gramtele')}>{T('open_gramtele')}</button></div>}
       </div>
     </div>
   );

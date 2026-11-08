@@ -1,4 +1,5 @@
 import type { Mission } from '../../game/types';
+import { textKey } from './bind';
 import { M01, M02, M03, M04 } from './early';
 import { M05 } from './finale';
 
@@ -7,11 +8,4 @@ export const MISSION_BY_ID: Record<string, Mission> = Object.fromEntries(MISSION
 
 export { M01, M02, M03, M04, M05 };
 
-export const CHAPTERS: { n: number; title: string }[] = [
-  { n: 0, title: 'The Invitation' },
-  { n: 1, title: 'First Contact' },
-  { n: 2, title: 'Digital Footprints' },
-  { n: 3, title: 'The Archive' },
-  { n: 4, title: 'Surface Area' },
-  { n: 5, title: 'The Point of No Return' },
-];
+export const CHAPTERS: { n: number; title: string }[] = [0, 1, 2, 3, 4, 5].map((n) => ({ n, title: textKey(`chapters.${n}`) }));

@@ -1,5 +1,5 @@
 import { FormEvent, useEffect, useState } from 'react';
-import { tr } from '../i18n';
+import { T } from '../i18n';
 import { useReducedMotion, useSession } from './session';
 
 export function Logo({ small }: { small?: boolean }) {
@@ -54,21 +54,21 @@ export function Intro({ onDone }: { onDone: () => void }) {
   return (
     <main className={`intro ${reduced ? 'no-motion' : ''}`}>
       {stage === 1 && (
-        <pre className="intro-boot" aria-label={tr('Machine starting')}>
+        <pre className="intro-boot" aria-label={T('machine_starting')}>
           {BOOT.slice(0, bootLines).map((l) => <div key={l}>{l}</div>)}
         </pre>
       )}
       {stage === 2 && <div className="intro-logo"><Logo /></div>}
-      {stage === 3 && <div className="intro-connect"><Logo small /><p>{tr('connecting through {host}', { host: 'relay.blackwell.test' })}</p></div>}
+      {stage === 3 && <div className="intro-connect"><Logo small /><p>{T('connecting_through_host', { host: 'relay.blackwell.test' })}</p></div>}
       {stage >= 4 && (
         <div className="intro-first">
           <div className="intro-from">NULL</div>
-          <p>{tr('You asked a careful question in a public place. Someone read it.')}</p>
-          <p>{tr('A contractor account is waiting. It needs a name.')}</p>
-          <button className="btn" autoFocus onClick={onDone}>{tr('Choose one')}</button>
+          <p>{T('you_asked_a_careful_question')}</p>
+          <p>{T('a_contractor_account_is_waiting')}</p>
+          <button className="btn" autoFocus onClick={onDone}>{T('choose_one')}</button>
         </div>
       )}
-      {stage < 4 && <button className="intro-skip" onClick={onDone}>{tr('Skip')}</button>}
+      {stage < 4 && <button className="intro-skip" onClick={onDone}>{T('skip')}</button>}
     </main>
   );
 }
@@ -82,8 +82,8 @@ export function SignUp({ onDone }: { onDone: () => void }) {
   const submit = (e: FormEvent) => {
     e.preventDefault();
     const h = handle.trim();
-    if (!/^[a-zA-Z0-9_-]{3,16}$/.test(h)) setError(tr('Three to sixteen letters, digits, dashes or underscores.'));
-    else if (RESERVED.test(h)) setError(tr('That handle is taken.'));
+    if (!/^[a-zA-Z0-9_-]{3,16}$/.test(h)) setError(T('three_to_sixteen_letters_digits'));
+    else if (RESERVED.test(h)) setError(T('that_handle_is_taken'));
     else {
       s.engine.signUp(h);
       s.view = 'gramtele';
@@ -97,12 +97,12 @@ export function SignUp({ onDone }: { onDone: () => void }) {
     <main className="signup">
       <Logo small />
       <form onSubmit={submit}>
-        <h1>{tr('Say it to someone. Nobody else.')}</h1>
-        <p>{tr('Gramtele does not ask for your name, your number or an address. You are the handle you pick. Your standing is what you do with it.')}</p>
-        <label htmlFor="handle">{tr('Handle')}</label>
+        <h1>{T('say_it_to_someone_nobody')}</h1>
+        <p>{T('gramtele_does_not_ask_for')}</p>
+        <label htmlFor="handle">{T('handle')}</label>
         <input id="handle" autoFocus value={handle} maxLength={16} onChange={(e) => { setHandle(e.target.value); setError(null); }} autoComplete="off" spellCheck={false} aria-describedby="handle-note" />
-        <p id="handle-note" className={error ? 'finding-wrong' : 'muted'} role={error ? 'alert' : undefined}>{error ?? tr('Not your real name. This is a story, and you are in it.')}</p>
-        <button className="btn" type="submit">{tr('Create account')}</button>
+        <p id="handle-note" className={error ? 'finding-wrong' : 'muted'} role={error ? 'alert' : undefined}>{error ?? T('not_your_real_name_this')}</p>
+        <button className="btn" type="submit">{T('create_account')}</button>
       </form>
     </main>
   );

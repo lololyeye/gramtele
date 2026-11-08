@@ -1,6 +1,6 @@
 import { rankOf } from '../../data/reputation';
 import { useRef, useState } from 'react';
-import { LANGUAGES, Language, LanguagePref, tr } from '../../i18n';
+import { LANGUAGES, Language, LanguagePref, tr, T, ui } from '../../i18n';
 import { Icon } from '../components/Icon';
 import { dateTime, realDateTime } from '../format';
 import { STATUS_LABEL } from '../messenger/MissionCard';
@@ -23,34 +23,34 @@ export function EvidenceView() {
   const showExhibits = !!st.missions.m05;
   return (
     <div className="split">
-      <nav className="split-nav" aria-label={tr('Evidence items')}>
-        <h1 className="view-title">{tr('Evidence')}</h1>
+      <nav className="split-nav" aria-label={T('evidence_items')}>
+        <h1 className="view-title">{T('evidence')}</h1>
         {st.evidence.map((x) => (
           <button key={x.id} className={e?.id === x.id ? 'nav-item active' : 'nav-item'} onClick={() => setSel(x.id)} aria-current={e?.id === x.id}>
             <span>{tr(x.title)}<small>{tr(x.source)}</small></span>
           </button>
         ))}
-        {!st.evidence.length && <p className="empty-line">{tr('The locker is empty. Hash a file into it with:')} <code>evidence add FILE</code></p>}
+        {!st.evidence.length && <p className="empty-line">{T('the_locker_is_empty_hash')} <code>evidence add FILE</code></p>}
       </nav>
       <div className="split-main">
         {e ? (
           <article className="exhibit">
-            <div className="eyebrow">{tr('Item {at} of {total}', { at: st.evidence.indexOf(e) + 1, total: st.evidence.length })}</div>
+            <div className="eyebrow">{T('item_at_of_total', { at: st.evidence.indexOf(e) + 1, total: st.evidence.length })}</div>
             <h2>{tr(e.title)}</h2>
             <p>{tr(e.summary)}</p>
             <dl className="kv">
-              <dt>{tr('Source')}</dt><dd>{tr(e.source)}</dd>
-              <dt>{tr('Collected')}</dt><dd>{dateTime(e.at)}</dd>
-              {e.path && <><dt>{tr('Path')}</dt><dd><code>{e.path}</code></dd></>}
-              <dt>SHA-256</dt><dd><code className="hash">{e.hash ?? tr('not hashed')}</code></dd>
+              <dt>{T('source')}</dt><dd>{tr(e.source)}</dd>
+              <dt>{T('collected')}</dt><dd>{dateTime(e.at)}</dd>
+              {e.path && <><dt>{T('path')}</dt><dd><code>{e.path}</code></dd></>}
+              <dt>SHA-256</dt><dd><code className="hash">{e.hash ?? T('not_hashed')}</code></dd>
             </dl>
-            <p className="muted">{tr('A hash proves this copy has not changed since you collected it. It does not prove the content is true.')}</p>
+            <p className="muted">{T('a_hash_proves_this_copy')}</p>
           </article>
-        ) : <div className="empty"><Icon name="evidence" size={34} /><h2>{tr('Nothing collected')}</h2><p>{tr('Keep the originals. Note where they came from.')}</p></div>}
+        ) : <div className="empty"><Icon name="evidence" size={34} /><h2>{T('nothing_collected')}</h2><p>{T('keep_the_originals_note_where')}</p></div>}
         {showExhibits && (
           <section className="exhibits">
-            <h3>{tr('Dossier exhibits')}</h3>
-            <p className="muted">{st.sealed ? tr('Sealed.') : tr('Copy these into ~/dossier, then run "dossier seal".')}</p>
+            <h3>{T('dossier_exhibits')}</h3>
+            <p className="muted">{st.sealed ? T('sealed') : T('copy_these_into_dossier_then')}</p>
             <ul>{required.map((r) => <li key={r.id} className={st.evidence.some((x) => x.id === r.id) ? 'have' : ''}>{tr(r.title)}</li>)}</ul>
           </section>
         )}
@@ -71,14 +71,14 @@ export function SkillsView() {
   return (
     <div className="page">
       <header className="page-head">
-        <h1 className="view-title">{tr('Skills')}</h1>
+        <h1 className="view-title">{T('skills')}</h1>
         <div className="level">
-          <span className="level-n">{tr('Level {n}', { n: level })}</span>
-          <span className="meter" role="progressbar" aria-valuemin={from} aria-valuemax={to} aria-valuenow={st.xp} aria-label={tr('Experience')}><i style={{ width: `${((st.xp - from) / (to - from)) * 100}%` }} /></span>
+          <span className="level-n">{T('level_n', { n: level })}</span>
+          <span className="meter" role="progressbar" aria-valuemin={from} aria-valuemax={to} aria-valuenow={st.xp} aria-label={T('experience')}><i style={{ width: `${((st.xp - from) / (to - from)) * 100}%` }} /></span>
           <span className="muted">{st.xp} / {to} XP</span>
         </div>
       </header>
-      <p className="muted lede">{tr('Nodes open when you demonstrate the skill in the terminal. They cannot be bought.')}</p>
+      <p className="muted lede">{T('nodes_open_when_you_demonstrate')}</p>
       <div className="skill-grid">
         {skills.map((id) => {
           const nodes = SKILL_NODES.filter((n) => n.skill === id);
@@ -86,13 +86,13 @@ export function SkillsView() {
           const got = nodes.filter((n) => st.skills.includes(n.id)).length;
           return (
             <section key={id} className="skill-col">
-              <h3>{tr(SKILL_TITLES[id])} <small>{tr('{done} of {total}', { done: got, total: nodes.length })}</small></h3>
+              <h3>{tr(SKILL_TITLES[id])} <small>{T('done_of_total', { done: got, total: nodes.length })}</small></h3>
               <ul>
                 {nodes.map((n) => {
                   const have = st.skills.includes(n.id);
                   return (
                     <li key={n.id} className={have ? 'skill have' : 'skill'}>
-                      <strong>{have ? tr(n.title) : tr('Unproven')}</strong>
+                      <strong>{have ? tr(n.title) : T('unproven')}</strong>
                       <span>{tr(n.text)}</span>
                     </li>
                   );
@@ -103,11 +103,11 @@ export function SkillsView() {
         })}
       </div>
       <section className="achievements">
-        <h3>{tr('Achievements')}</h3>
+        <h3>{T('achievements')}</h3>
         <ul>
           {ACHIEVEMENTS.filter((a) => !a.hidden || st.achievements.includes(a.id)).map((a) => {
             const have = st.achievements.includes(a.id);
-            return <li key={a.id} className={have ? 'have' : ''}><strong>{tr(a.title)}</strong><span>{have ? tr(a.text) : tr('Not yet.')}</span></li>;
+            return <li key={a.id} className={have ? 'have' : ''}><strong>{tr(a.title)}</strong><span>{have ? tr(a.text) : T('not_yet')}</span></li>;
           })}
         </ul>
       </section>
@@ -118,11 +118,11 @@ export function SkillsView() {
 // ---------- inventory ----------
 
 const TOOLKITS: Record<string, { title: string; text: string; commands: string[] }> = {
-  osint: { title: 'OSINT kit', text: 'Read public sources and the metadata inside documents.', commands: ['exiftool', 'pdftotext', 'strings', 'file', 'curl', 'wget'] },
-  forensics: { title: 'Forensics kit', text: 'Verify copies and decode what you find.', commands: ['sha256sum', 'md5sum', 'base64', 'xxd', 'diff'] },
-  db: { title: 'Database client', text: 'A SQLite shell. Evidence images open read-only.', commands: ['sqlite3'] },
-  net: { title: 'Network kit', text: 'Name resolution, routes, ports and raw HTTP.', commands: ['ping', 'traceroute', 'ip', 'ss', 'dig', 'host', 'whois', 'nmap', 'curl', 'wget'] },
-  dossier: { title: 'Dossier tool', text: 'Checks exhibits by content, then seals them with a manifest.', commands: ['dossier'] },
+  osint: { title: ui('osint_kit'), text: ui('read_public_sources_and_the'), commands: ['exiftool', 'pdftotext', 'strings', 'file', 'curl', 'wget'] },
+  forensics: { title: ui('forensics_kit'), text: ui('verify_copies_and_decode_what'), commands: ['sha256sum', 'md5sum', 'base64', 'xxd', 'diff'] },
+  db: { title: ui('database_client'), text: ui('a_sqlite_shell_evidence_images'), commands: ['sqlite3'] },
+  net: { title: ui('network_kit'), text: ui('name_resolution_routes_ports_and'), commands: ['ping', 'traceroute', 'ip', 'ss', 'dig', 'host', 'whois', 'nmap', 'curl', 'wget'] },
+  dossier: { title: ui('dossier_tool'), text: ui('checks_exhibits_by_content_then'), commands: ['dossier'] },
 };
 
 export function InventoryView() {
@@ -139,17 +139,17 @@ export function InventoryView() {
   const downloads = list('/home/player/Downloads');
   return (
     <div className="page">
-      <h1 className="view-title">{tr('Inventory')}</h1>
+      <h1 className="view-title">{T('inventory')}</h1>
       <dl className="ledger">
-        <div><dt>{tr('Credits')}</dt><dd>{st.credits}</dd></div>
-        <div><dt>{tr('Standing')}</dt><dd>{st.standing}</dd></div>
-        <div><dt>{tr('Rank')}</dt><dd>{tr(rank.title)}{rank.next !== null && <small className="rank-next">{tr('{n} more to {rank}', { n: rank.next - st.standing, rank: tr(rankOf(rank.next).title) })}</small>}</dd></div>
-        <div><dt>{tr('Contractor id')}</dt><dd className="mono">c-0047</dd></div>
-        <div><dt>{tr('Workbench')}</dt><dd className="mono">10.40.0.47</dd></div>
+        <div><dt>{T('credits')}</dt><dd>{st.credits}</dd></div>
+        <div><dt>{T('standing')}</dt><dd>{st.standing}</dd></div>
+        <div><dt>{T('rank')}</dt><dd>{tr(rank.title)}{rank.next !== null && <small className="rank-next">{T('n_more_to_rank', { n: rank.next - st.standing, rank: tr(rankOf(rank.next).title) })}</small>}</dd></div>
+        <div><dt>{T('contractor_id')}</dt><dd className="mono">c-0047</dd></div>
+        <div><dt>{T('workbench')}</dt><dd className="mono">10.40.0.47</dd></div>
       </dl>
       <section>
-        <h3>{tr('Toolkits')}</h3>
-        <p className="muted">{tr('Issued as assignments require them. Base Linux tools are always present.')}</p>
+        <h3>{T('toolkits')}</h3>
+        <p className="muted">{T('issued_as_assignments_require_them')}</p>
         <ul className="tool-list">
           {available.map((t) => (
             <li key={t}>
@@ -158,18 +158,18 @@ export function InventoryView() {
               <p className="cmds">{TOOLKITS[t].commands.map((c) => <code key={c}>{c}</code>)}</p>
             </li>
           ))}
-          {!available.length && <li className="empty-line">{tr('Nothing issued yet.')}</li>}
+          {!available.length && <li className="empty-line">{T('nothing_issued_yet')}</li>}
         </ul>
       </section>
       <section>
         <h3>~/Downloads</h3>
-        {downloads.length ? <ul className="file-list">{downloads.map((f) => <li key={f}><code>{f}</code></li>)}</ul> : <p className="muted">{tr('Empty. Attachments and saved pages land here.')}</p>}
+        {downloads.length ? <ul className="file-list">{downloads.map((f) => <li key={f}><code>{f}</code></li>)}</ul> : <p className="muted">{T('empty_attachments_and_saved_pages')}</p>}
       </section>
       <section>
-        <h3>{tr('Assignments on record')}</h3>
+        <h3>{T('assignments_on_record')}</h3>
         <ul className="file-list">
           {MISSIONS.filter((m) => st.missions[m.id]).map((m) => <li key={m.id}>{tr(m.title)} <span className="muted">· {tr(STATUS_LABEL[st.missions[m.id].status])}</span></li>)}
-          {!Object.keys(st.missions).length && <li className="muted">{tr('None.')}</li>}
+          {!Object.keys(st.missions).length && <li className="muted">{T('none')}</li>}
         </ul>
       </section>
     </div>
@@ -178,7 +178,7 @@ export function InventoryView() {
 
 // ---------- journal ----------
 
-const KIND_LABEL: Record<JournalKind, string> = { story: 'Event', decision: 'Decision', finding: 'Finding', note: 'Note', system: 'System' };
+const KIND_LABEL: Record<JournalKind, string> = { story: ui('event'), decision: ui('decision'), finding: ui('finding'), note: ui('note'), system: ui('system') };
 
 export function JournalView() {
   const s = useSession();
@@ -189,10 +189,10 @@ export function JournalView() {
   return (
     <div className="page journal">
       <header className="page-head">
-        <h1 className="view-title">{tr('Journal')}</h1>
-        <div className="filter" role="group" aria-label={tr('Filter entries')}>
+        <h1 className="view-title">{T('journal')}</h1>
+        <div className="filter" role="group" aria-label={T('filter_entries')}>
           {(['all', 'decision', 'finding', 'story', 'note'] as const).map((k) => (
-            <button key={k} className={filter === k ? 'active' : ''} aria-pressed={filter === k} onClick={() => setFilter(k)}>{k === 'all' ? tr('All') : tr(KIND_LABEL[k])}</button>
+            <button key={k} className={filter === k ? 'active' : ''} aria-pressed={filter === k} onClick={() => setFilter(k)}>{k === 'all' ? T('all') : tr(KIND_LABEL[k])}</button>
           ))}
         </div>
       </header>
@@ -202,10 +202,10 @@ export function JournalView() {
         s.engine.addNote(draft.trim());
         setDraft('');
       }}>
-        <label htmlFor="note">{tr('Write it down')}</label>
+        <label htmlFor="note">{T('write_it_down')}</label>
         <div className="finding-row">
-          <input id="note" value={draft} onChange={(e) => setDraft(e.target.value)} placeholder={tr('Your own note. The terminal command note does the same.')} />
-          <button className="btn-quiet" type="submit">{tr('Add')}</button>
+          <input id="note" value={draft} onChange={(e) => setDraft(e.target.value)} placeholder={T('your_own_note_the_terminal')} />
+          <button className="btn-quiet" type="submit">{T('add')}</button>
         </div>
       </form>
       <ol className="entries">
@@ -216,7 +216,7 @@ export function JournalView() {
             <p>{e.vars ? tr(e.text, Object.fromEntries(Object.entries(e.vars).map(([k, v]) => [k, tr(v)]))) : tr(e.text)}</p>
           </li>
         ))}
-        {!entries.length && <li className="empty-line">{tr('No entries.')}</li>}
+        {!entries.length && <li className="empty-line">{T('no_entries')}</li>}
       </ol>
     </div>
   );
@@ -228,13 +228,13 @@ function LanguageSection() {
   const s = useSession();
   const pref = s.languagePreference;
   const options: { id: LanguagePref; label: string; note?: string }[] = [
-    { id: 'auto', label: tr('Automatic'), note: tr('Follows your browser: {lang}', { lang: LANGUAGES.find((l: { id: Language }) => l.id === s.language)?.label ?? '' }) },
+    { id: 'auto', label: T('automatic'), note: T('follows_your_browser_lang', { lang: LANGUAGES.find((l: { id: Language }) => l.id === s.language)?.label ?? '' }) },
     ...LANGUAGES.map((l) => ({ id: l.id as LanguagePref, label: l.label })),
   ];
   return (
     <section>
-      <h3>{tr('Language')}</h3>
-      <div className="segmented" role="radiogroup" aria-label={tr('Language')}>
+      <h3>{T('language')}</h3>
+      <div className="segmented" role="radiogroup" aria-label={T('language')}>
         {options.map((o) => (
           <label key={o.id} className={pref === o.id ? 'segment on' : 'segment'}>
             <input type="radio" name="language" className="sr" checked={pref === o.id} onChange={() => s.setLanguage(o.id)} />
@@ -242,7 +242,7 @@ function LanguageSection() {
           </label>
         ))}
       </div>
-      <p className="muted">{pref === 'auto' ? options[0].note : tr('Your choice stays until you change it. Automatic follows your browser again.')}</p>
+      <p className="muted">{pref === 'auto' ? options[0].note : T('your_choice_stays_until_you')}</p>
     </section>
   );
 }
@@ -280,84 +280,84 @@ export function SettingsView({ onQuit }: { onQuit: () => void }) {
     a.download = `gramtele-${g.state.handle || 'save'}.json`;
     a.click();
     URL.revokeObjectURL(url);
-    setNote(tr('Save exported.'));
+    setNote(T('save_exported'));
   };
 
   const importSave = async (f: File) => {
     if (f.size > 8_000_000) {
-      setNote(tr('That file is too large to be a save.'));
+      setNote(T('that_file_is_too_large'));
       return;
     }
     const r = s.store.import(await f.text());
-    if ('error' in r) setNote(tr('Import refused: {error}', { error: tr(r.error) }));
+    if ('error' in r) setNote(T('import_refused_error', { error: tr(r.error) }));
     else {
       s.replace(r.state);
       s.autosave();
-      setNote(tr('Save imported.'));
+      setNote(T('save_imported'));
     }
   };
 
   return (
     <div className="page settings">
-      <h1 className="view-title">{tr('Settings')}</h1>
+      <h1 className="view-title">{T('settings')}</h1>
       <LanguageSection />
       <section>
-        <h3>{tr('Sound')}</h3>
-        <label className="check"><input type="checkbox" checked={set.sound.muted} onChange={(e) => sound((x) => { x.muted = e.target.checked; })} /> {tr('Mute everything')}</label>
-        <Slider label={tr('Master')} value={set.sound.master} disabled={set.sound.muted} onChange={(v) => sound((x) => { x.master = v; })} />
-        <Slider label={tr('Interface')} value={set.sound.ui} disabled={set.sound.muted} onChange={(v) => sound((x) => { x.ui = v; })} />
-        <Slider label={tr('Typing')} value={set.sound.keys} disabled={set.sound.muted} onChange={(v) => sound((x) => { x.keys = v; })} />
-        <Slider label={tr('Room tone')} value={set.sound.ambient} disabled={set.sound.muted} onChange={(v) => sound((x) => { x.ambient = v; })} />
+        <h3>{T('sound')}</h3>
+        <label className="check"><input type="checkbox" checked={set.sound.muted} onChange={(e) => sound((x) => { x.muted = e.target.checked; })} /> {T('mute_everything')}</label>
+        <Slider label={T('master')} value={set.sound.master} disabled={set.sound.muted} onChange={(v) => sound((x) => { x.master = v; })} />
+        <Slider label={T('interface')} value={set.sound.ui} disabled={set.sound.muted} onChange={(v) => sound((x) => { x.ui = v; })} />
+        <Slider label={T('typing')} value={set.sound.keys} disabled={set.sound.muted} onChange={(v) => sound((x) => { x.keys = v; })} />
+        <Slider label={T('room_tone')} value={set.sound.ambient} disabled={set.sound.muted} onChange={(v) => sound((x) => { x.ambient = v; })} />
       </section>
       <section>
-        <h3>{tr('Display')}</h3>
+        <h3>{T('display')}</h3>
         <div className="field-row">
-          <label htmlFor="motion">{tr('Motion')}</label>
+          <label htmlFor="motion">{T('motion')}</label>
           <select id="motion" value={set.reducedMotion} onChange={(e) => g.updateSettings((x) => { x.reducedMotion = e.target.value as typeof set.reducedMotion; })}>
-            <option value="auto">{tr('Follow system')}</option>
-            <option value="on">{tr('Reduced')}</option>
-            <option value="off">{tr('Full')}</option>
+            <option value="auto">{T('follow_system')}</option>
+            <option value="on">{T('reduced')}</option>
+            <option value="off">{T('full')}</option>
           </select>
         </div>
         <div className="field-row">
-          <label htmlFor="scale">{tr('Text size')}</label>
+          <label htmlFor="scale">{T('text_size')}</label>
           <select id="scale" value={set.fontScale} onChange={(e) => g.updateSettings((x) => { x.fontScale = Number(e.target.value); })}>
-            <option value={0.9}>{tr('Small')}</option>
-            <option value={1}>{tr('Default')}</option>
-            <option value={1.15}>{tr('Large')}</option>
-            <option value={1.3}>{tr('Largest')}</option>
+            <option value={0.9}>{T('small')}</option>
+            <option value={1}>{T('default')}</option>
+            <option value={1.15}>{T('large')}</option>
+            <option value={1.3}>{T('largest')}</option>
           </select>
         </div>
         <div className="field-row">
-          <label htmlFor="typing">{tr('Messages arrive')}</label>
+          <label htmlFor="typing">{T('messages_arrive')}</label>
           <select id="typing" value={set.typingSpeed} onChange={(e) => g.updateSettings((x) => { x.typingSpeed = e.target.value as typeof set.typingSpeed; })}>
-            <option value="normal">{tr('At typing speed')}</option>
-            <option value="instant">{tr('Immediately')}</option>
+            <option value="normal">{T('at_typing_speed')}</option>
+            <option value="instant">{T('immediately')}</option>
           </select>
         </div>
-        <label className="check"><input type="checkbox" checked={set.fieldNotes} onChange={(e) => g.updateSettings((x) => { x.fieldNotes = e.target.checked; })} /> {tr('Show field notes beside the terminal')}</label>
+        <label className="check"><input type="checkbox" checked={set.fieldNotes} onChange={(e) => g.updateSettings((x) => { x.fieldNotes = e.target.checked; })} /> {T('show_field_notes_beside_the')}</label>
       </section>
       <section>
-        <h3>{tr('Saves')}</h3>
-        <p className="muted">{tr('The game saves itself every few seconds. Saves stay in this browser.')}</p>
+        <h3>{T('saves')}</h3>
+        <p className="muted">{T('the_game_saves_itself_every')}</p>
         <table className="saves">
-          <thead><tr><th scope="col">{tr('Slot')}</th><th scope="col">{tr('Handle')}</th><th scope="col">XP</th><th scope="col">{tr('Saved')}</th><th scope="col"><span className="sr">{tr('Actions')}</span></th></tr></thead>
+          <thead><tr><th scope="col">{T('slot')}</th><th scope="col">{T('handle')}</th><th scope="col">XP</th><th scope="col">{T('saved')}</th><th scope="col"><span className="sr">{T('actions')}</span></th></tr></thead>
           <tbody>
             {SLOTS.map((slot: SlotId) => {
               const info = s.store.info(slot);
               return (
                 <tr key={slot}>
-                  <th scope="row">{slot === 'auto' ? tr('Autosave') : tr('Slot {n}', { n: slot.slice(-1) })}</th>
-                  <td>{info?.handle ?? tr('empty')}</td>
+                  <th scope="row">{slot === 'auto' ? T('autosave') : T('slot_n', { n: slot.slice(-1) })}</th>
+                  <td>{info?.handle ?? T('empty')}</td>
                   <td>{info?.xp ?? ''}</td>
                   <td>{info ? realDateTime(info.savedAt) : ''}</td>
                   <td className="save-actions">
-                    {slot !== 'auto' && <button className="link" onClick={() => { const r = s.save(slot); setNote(r.ok ? tr('Saved.') : tr('Could not save: {error}', { error: r.error ?? '' })); }}>{tr('Save')}</button>}
+                    {slot !== 'auto' && <button className="link" onClick={() => { const r = s.save(slot); setNote(r.ok ? T('saved_2') : T('could_not_save_error', { error: r.error ?? '' })); }}>{T('save')}</button>}
                     {info && <button className="link" onClick={() => {
                       const r = s.store.load(slot);
-                      if (!r || 'error' in r) setNote(tr('Could not load: {error}', { error: tr(r?.error ?? 'empty slot') }));
-                      else { s.replace(r.state); setNote(tr('Loaded.')); }
-                    }}>{tr('Load')}</button>}
+                      if (!r || 'error' in r) setNote(T('could_not_load_error', { error: tr(r?.error ?? ui('empty_slot')) }));
+                      else { s.replace(r.state); setNote(T('loaded')); }
+                    }}>{T('load')}</button>}
                   </td>
                 </tr>
               );
@@ -365,38 +365,38 @@ export function SettingsView({ onQuit }: { onQuit: () => void }) {
           </tbody>
         </table>
         <div className="row">
-          <button className="btn-quiet" onClick={exportSave}>{tr('Export save')}</button>
-          <button className="btn-quiet" onClick={() => file.current?.click()}>{tr('Import save')}</button>
+          <button className="btn-quiet" onClick={exportSave}>{T('export_save')}</button>
+          <button className="btn-quiet" onClick={() => file.current?.click()}>{T('import_save')}</button>
           <input ref={file} type="file" accept="application/json,.json" hidden onChange={(e) => {
             const f = e.target.files?.[0];
             if (f) void importSave(f);
             e.target.value = '';
           }} />
-          <button className="btn-quiet" onClick={onQuit}>{tr('Save and quit to title')}</button>
+          <button className="btn-quiet" onClick={onQuit}>{T('save_and_quit_to_title')}</button>
         </div>
         {note && <p role="status" className="form-note">{note}</p>}
-        {s.saveError && <p role="alert" className="finding-wrong">{tr('Autosave failed: {error}', { error: s.saveError })}</p>}
+        {s.saveError && <p role="alert" className="finding-wrong">{T('autosave_failed_error', { error: s.saveError })}</p>}
       </section>
       <section>
-        <h3>{tr('Reset')}</h3>
+        <h3>{T('reset')}</h3>
         {confirmReset ? (
           <div className="row">
-            <span>{tr('Delete the autosave and start again? Saved slots stay.')}</span>
-            <button className="btn-danger" onClick={() => { s.store.remove('auto'); window.location.reload(); }}>{tr('Delete and restart')}</button>
-            <button className="btn-quiet" onClick={() => setConfirmReset(false)}>{tr('Keep playing')}</button>
+            <span>{T('delete_the_autosave_and_start')}</span>
+            <button className="btn-danger" onClick={() => { s.store.remove('auto'); window.location.reload(); }}>{T('delete_and_restart')}</button>
+            <button className="btn-quiet" onClick={() => setConfirmReset(false)}>{T('keep_playing')}</button>
           </div>
-        ) : <button className="btn-quiet" onClick={() => setConfirmReset(true)}>{tr('Start over')}</button>}
+        ) : <button className="btn-quiet" onClick={() => setConfirmReset(true)}>{T('start_over')}</button>}
       </section>
       <section className="keys">
-        <h3>{tr('Keyboard')}</h3>
+        <h3>{T('keyboard')}</h3>
         <dl className="kv">
-          <dt><kbd>Alt</kbd>+<kbd>1</kbd>-<kbd>9</kbd></dt><dd>{tr('Switch view')}</dd>
-          <dt><kbd>Ctrl</kbd>+<kbd>`</kbd></dt><dd>{tr('Terminal drawer, from any view')}</dd>
-          <dt><kbd>1</kbd>-<kbd>9</kbd></dt><dd>{tr('In Gramtele, choose a reply when no field has focus')}</dd>
-          <dt><kbd>{tr('Enter')}</kbd></dt><dd>{tr('In a message, send it. Shift+Enter starts a new line')}</dd>
-          <dt><kbd>Tab</kbd></dt><dd>{tr('In the terminal, complete a name')}</dd>
-          <dt><kbd>↑</kbd> <kbd>↓</kbd></dt><dd>{tr('In the terminal, command history')}</dd>
-          <dt><kbd>Ctrl</kbd>+<kbd>L</kbd></dt><dd>{tr('Clear the terminal')}</dd>
+          <dt><kbd>Alt</kbd>+<kbd>1</kbd>-<kbd>9</kbd></dt><dd>{T('switch_view')}</dd>
+          <dt><kbd>Ctrl</kbd>+<kbd>`</kbd></dt><dd>{T('terminal_drawer_from_any_view')}</dd>
+          <dt><kbd>1</kbd>-<kbd>9</kbd></dt><dd>{T('in_gramtele_choose_a_reply')}</dd>
+          <dt><kbd>{T('enter')}</kbd></dt><dd>{T('in_a_message_send_it')}</dd>
+          <dt><kbd>Tab</kbd></dt><dd>{T('in_the_terminal_complete_a')}</dd>
+          <dt><kbd>↑</kbd> <kbd>↓</kbd></dt><dd>{T('in_the_terminal_command_history')}</dd>
+          <dt><kbd>Ctrl</kbd>+<kbd>L</kbd></dt><dd>{T('clear_the_terminal')}</dd>
         </dl>
       </section>
     </div>

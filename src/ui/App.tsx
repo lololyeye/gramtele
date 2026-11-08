@@ -1,7 +1,7 @@
 import { Component, ReactNode, useMemo, useState } from 'react';
 import { newState } from '../game/engine';
 import type { SlotInfo } from '../game/persistence';
-import { LANGUAGES, tr } from '../i18n';
+import { LANGUAGES, tr, T } from '../i18n';
 import { realDateTime } from './format';
 import { Intro, Logo, SignUp } from './Intro';
 import { GameShell } from './GameShell';
@@ -19,18 +19,18 @@ class Boundary extends Component<{ session: Session; children: ReactNode }, { er
     const s = this.props.session;
     return (
       <main className="fatal" role="alert">
-        <h1>{tr('The interface stopped')}</h1>
-        <p>{tr('Your last autosave is intact. Reloading usually fixes this.')}</p>
+        <h1>{T('the_interface_stopped')}</h1>
+        <p>{T('your_last_autosave_is_intact')}</p>
         <pre>{this.state.error.message}</pre>
         <div className="row">
-          <button className="btn" onClick={() => window.location.reload()}>{tr('Reload')}</button>
+          <button className="btn" onClick={() => window.location.reload()}>{T('reload')}</button>
           <button className="btn-quiet" onClick={() => {
             const blob = new Blob([s.store.export(s.engine.state)], { type: 'application/json' });
             const a = document.createElement('a');
             a.href = URL.createObjectURL(blob);
             a.download = 'gramtele-recovery.json';
             a.click();
-          }}>{tr('Export a copy of this game')}</button>
+          }}>{T('export_a_copy_of_this')}</button>
         </div>
       </main>
     );
@@ -40,7 +40,7 @@ class Boundary extends Component<{ session: Session; children: ReactNode }, { er
 function TitleLanguage() {
   const s = useSession();
   return (
-    <div className="title-lang" role="group" aria-label={tr('Language')}>
+    <div className="title-lang" role="group" aria-label={T('language')}>
       {LANGUAGES.map((l) => (
         <button key={l.id} type="button" className={s.language === l.id ? 'on' : ''} aria-pressed={s.language === l.id} onClick={() => s.setLanguage(l.id)}>{l.label}</button>
       ))}
@@ -57,35 +57,35 @@ function TitleScreen({ session, onNew, onContinue }: { session: Session; onNew: 
     <main className="title-screen">
       <TitleLanguage />
       <Logo />
-      <p className="title-tag">{tr('A cybersecurity investigation, played in a terminal.')}</p>
-      <nav className="title-menu" aria-label={tr('Main menu')}>
+      <p className="title-tag">{T('a_cybersecurity_investigation_played_in')}</p>
+      <nav className="title-menu" aria-label={T('main_menu')}>
         {auto && (
           <button className="title-item primary" autoFocus onClick={() => {
             const r = session.store.load('auto');
-            if (!r || 'error' in r) setError(r && 'error' in r ? tr('The autosave could not be read: {error}', { error: tr(r.error) }) : tr('No autosave.'));
+            if (!r || 'error' in r) setError(r && 'error' in r ? T('the_autosave_could_not_be', { error: tr(r.error) }) : T('no_autosave'));
             else {
               session.replace(r.state);
               onContinue();
             }
           }}>
-            {tr('Continue')}
+            {T('continue')}
             <small>{auto.handle}, {auto.xp} XP, {realDateTime(auto.savedAt)}</small>
           </button>
         )}
         {auto && !confirm ? (
-          <button className="title-item" onClick={() => setConfirm(true)}>{tr('New game')}</button>
+          <button className="title-item" onClick={() => setConfirm(true)}>{T('new_game')}</button>
         ) : (
           <button className={auto ? 'title-item danger' : 'title-item primary'} autoFocus={!auto} onClick={onNew}>
-            {auto ? tr('Replace the autosave and begin') : tr('Begin')}
+            {auto ? T('replace_the_autosave_and_begin') : T('begin')}
           </button>
         )}
         <label className="title-item">
-          {tr('Import a save')}
+          {T('import_a_save')}
           <input type="file" accept="application/json,.json" className="sr" onChange={async (e) => {
             const f = e.target.files?.[0];
             if (!f) return;
             const r = session.store.import(await f.text());
-            if ('error' in r) setError(tr('Import refused: {error}', { error: tr(r.error) }));
+            if ('error' in r) setError(T('import_refused_error', { error: tr(r.error) }));
             else {
               session.replace(r.state);
               onContinue();
@@ -94,7 +94,7 @@ function TitleScreen({ session, onNew, onContinue }: { session: Session; onNew: 
         </label>
       </nav>
       {error && <p className="finding-wrong" role="alert">{error}</p>}
-      <p className="title-foot">{tr('Everything here is simulated: the machines, the network, the people. Nothing you type leaves this page.')}</p>
+      <p className="title-foot">{T('everything_here_is_simulated_the')}</p>
     </main>
   );
 }

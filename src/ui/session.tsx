@@ -4,7 +4,7 @@
  */
 import { createContext, ReactNode, useContext, useEffect, useMemo, useSyncExternalStore } from 'react';
 import { GameEngine, newState } from '../game/engine';
-import { chooseLanguage, getLanguage, initLanguage, Language, LanguagePref, languagePref, tr } from '../i18n';
+import { chooseLanguage, getLanguage, initLanguage, Language, LanguagePref, languagePref, T } from '../i18n';
 import { KV, SaveStore, SlotId } from '../game/persistence';
 import type { GameState, ThreadId } from '../game/types';
 import { audio } from './audio';
@@ -159,11 +159,11 @@ export class Session {
   autosave() {
     if (!this.engine.state.handle) return;
     const r = this.store.save('auto', this.engine.state);
-    this.saveError = r.ok ? null : r.error ?? tr('Could not save.');
+    this.saveError = r.ok ? null : r.error ?? T('could_not_save');
   }
   save(slot: SlotId) {
     const r = this.store.save(slot, this.engine.state);
-    this.saveError = r.ok ? null : r.error ?? tr('Could not save.');
+    this.saveError = r.ok ? null : r.error ?? T('could_not_save');
     this.notify();
     return r;
   }

@@ -2,11 +2,12 @@ import { FR_DIALOGUE } from '../../data/dialogue/fr';
 import { flatten } from '../../data/dialogue/format';
 import { b64encode } from '../../game/commands/forensic';
 import { FRAGMENTS, KELPIE_INVOICE } from '../../data/dialogue/fragments';
-import { registerCatalog, registerLines } from '../index';
+import { flattenText } from '../../data/missions/format';
+import { FR_TEXT } from '../../data/missions/fr';
+import { registerCatalog, registerLines, uiLines } from '../index';
 import { Entry } from '../zip';
 import legacy from './legacy-dialogue.json';
 import { manEntries } from './man';
-import { missionEntries } from './missions';
 import { FR_UI } from './ui';
 import { FR_WORLD } from './world';
 
@@ -28,5 +29,7 @@ const ENCODED_FILES: Entry[] = [
 ].flatMap(([en, fr]): Entry[] => [[en, fr], [`${en}\n`, `${fr}\n`]]);
 
 registerLines('fr', flatten(FR_DIALOGUE));
+registerLines('fr', flattenText(FR_TEXT));
+registerLines('fr', uiLines(FR_UI));
 // legacy-dialogue.json: only for messages already stored in saves from before the datasets. Nothing new reads it.
-registerCatalog('fr', [...(legacy as Entry[]), ...ENCODED_FILES, ...flat(FR_WORLD), ...flat(FR_UI), ...missionEntries(), ...manEntries()]);
+registerCatalog('fr', [...(legacy as Entry[]), ...ENCODED_FILES, ...flat(FR_WORLD), ...manEntries()]);

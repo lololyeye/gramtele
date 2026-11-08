@@ -1,7 +1,7 @@
 import { KeyboardEvent, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { CHARACTERS } from '../../data/characters';
 import { ROOT } from '../../game/filesystem/vfs';
-import { tr } from '../../i18n';
+import { tr, T } from '../../i18n';
 import type { ThreadId } from '../../game/types';
 import { Icon, IconButton } from '../components/Icon';
 import { shortPath } from '../format';
@@ -19,10 +19,10 @@ function FilePicker({ onPick, onClose }: { onPick: (path: string) => void; onClo
   const first = useRef<HTMLButtonElement>(null);
   useEffect(() => first.current?.focus(), []);
   return (
-    <div className="file-picker" role="dialog" aria-label={tr('Attach a file from the workbench')} onKeyDown={(e) => { if (e.key === 'Escape') { e.stopPropagation(); onClose(); } }}>
+    <div className="file-picker" role="dialog" aria-label={T('attach_a_file_from_the')} onKeyDown={(e) => { if (e.key === 'Escape') { e.stopPropagation(); onClose(); } }}>
       <header>
-        <strong>{tr('Attach from the workbench')}</strong>
-        <IconButton icon="close" size={16} label={tr('Close')} onClick={onClose} />
+        <strong>{T('attach_from_the_workbench')}</strong>
+        <IconButton icon="close" size={16} label={T('close')} onClick={onClose} />
       </header>
       <ul>
         {files.map((f, i) => (
@@ -33,7 +33,7 @@ function FilePicker({ onPick, onClose }: { onPick: (path: string) => void; onClo
             </button>
           </li>
         ))}
-        {!files.length && <li className="empty-line">{tr('Your home directory has nothing to send.')}</li>}
+        {!files.length && <li className="empty-line">{T('your_home_directory_has_nothing')}</li>}
       </ul>
     </div>
   );
@@ -80,7 +80,7 @@ export function Composer({ thread }: { thread: ThreadId }) {
   };
 
   if (!writable) {
-    return <div className="composer-closed"><Icon name="lock" size={16} /><span>{tr('This account is closed. You can read the conversation, not reply to it.')}</span></div>;
+    return <div className="composer-closed"><Icon name="lock" size={16} /><span>{T('this_account_is_closed_you')}</span></div>;
   }
 
   const ready = !!value.trim();
@@ -88,20 +88,20 @@ export function Composer({ thread }: { thread: ThreadId }) {
     <form className="composer" onSubmit={(e) => { e.preventDefault(); send(); }}>
       {picking && <FilePicker onClose={() => setPicking(false)} onPick={(path) => { g.sendFile(thread, path); setPicking(false); box.current?.focus(); }} />}
       <div className={ready ? 'composer-field has-text' : 'composer-field'}>
-        <IconButton icon="clip" label={tr('Attach a file from the workbench')} active={picking} onClick={() => setPicking(!picking)} />
+        <IconButton icon="clip" label={T('attach_a_file_from_the')} active={picking} onClick={() => setPicking(!picking)} />
         <textarea
           ref={box}
           rows={1}
           value={value}
           onChange={(e) => update(e.target.value)}
           onKeyDown={onKey}
-          placeholder={tr('Message {name}', { name: tr(c.handle) })}
-          aria-label={tr('Message {name}', { name: tr(c.handle) })}
+          placeholder={T('message_name', { name: tr(c.handle) })}
+          aria-label={T('message_name', { name: tr(c.handle) })}
           aria-keyshortcuts="Enter"
           maxLength={2000}
           spellCheck
         />
-        <button type="submit" className="send-btn" disabled={!ready} aria-label={tr('Send')} title={tr('Send (Enter). Shift+Enter starts a new line.')}>
+        <button type="submit" className="send-btn" disabled={!ready} aria-label={T('send')} title={T('send_enter_shift_enter_starts')}>
           <Icon name="send" />
         </button>
       </div>

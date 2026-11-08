@@ -1,5 +1,5 @@
 import { KeyboardEvent, ReactNode, useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { tr } from '../i18n';
+import { T } from '../i18n';
 import { audio } from './audio';
 import { useSession } from './session';
 
@@ -63,7 +63,7 @@ function FullScreenProgram({ onExit }: { onExit: () => void }) {
     force((n) => n + 1);
   };
   return (
-    <div className="term-full" ref={ref} tabIndex={0} onKeyDown={onKey} role="application" aria-label={tr('{title}. Press q to quit.', { title: screen.title })}>
+    <div className="term-full" ref={ref} tabIndex={0} onKeyDown={onKey} role="application" aria-label={T('title_press_q_to_quit', { title: screen.title })}>
       <div className="term-full-title">{screen.title}</div>
       <pre className="term-full-body"><Ansi text={screen.render(rows).join('\n')} /></pre>
       <div className="term-full-status">{screen.status()}</div>
@@ -99,7 +99,7 @@ export function TerminalPane({ autoFocus = true }: { autoFocus?: boolean }) {
 
   useEffect(() => {
     if (s.scrollback.length === 0 && s.engine.state.shellHistory.length === 0) {
-      s.print(`${tr('Workbench 41, lab VPN 10.40.0.47. Type "help" to list commands and "man NAME" to read a manual.')}\n`);
+      s.print(`${T('workbench_41_lab_vpn_10')}\n`);
     }
     // Only on first mount.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -201,7 +201,7 @@ export function TerminalPane({ autoFocus = true }: { autoFocus?: boolean }) {
       if (!window.getSelection()?.toString()) input.current?.focus();
     }}>
       <div className="term-scroll" ref={scroller}>
-        <div role="log" aria-live="polite" aria-label={tr('Terminal output')}>
+        <div role="log" aria-live="polite" aria-label={T('terminal_output')}>
           {lines.map((l) => (
             <pre className="term-line" key={l.id}>
               {l.prompt !== undefined && <span className="term-prompt">{l.prompt}</span>}
@@ -223,7 +223,7 @@ export function TerminalPane({ autoFocus = true }: { autoFocus?: boolean }) {
               autoCapitalize="off"
               autoCorrect="off"
               spellCheck={false}
-              aria-label={tr('Command')}
+              aria-label={T('command')}
             />
           </div>
         )}

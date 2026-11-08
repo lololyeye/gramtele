@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import type { EndingId, ThreadId } from './types';
-import { GameEngine, newState, levelFor } from './engine';
+import { GameEngine, newState, levelFor, SAVE_VERSION } from './engine';
 import { SaveStore, validateSave } from './persistence';
 import { rankOf, standingOf, tableFor } from '../data/reputation';
-import { tr } from '../i18n';
+import { lineIn, tr, ui } from '../i18n';
 
 /** Plays the whole game through the same API the interface uses. */
 class Player {
@@ -16,8 +16,11 @@ class Player {
       this.g.tick();
     }
   }
-  run(l: string) {
-    return this.g.runCommand(l);
+  /** Everything the terminal prints, in the language under test, must be text: never a raw key. */
+  async run(l: string) {
+    const out = await this.g.runCommand(l);
+    expect(out, l).not.toContain('§');
+    return out;
   }
   say(thread: ThreadId, choice: string) {
     this.settle();
@@ -180,7 +183,7 @@ async function finaleUntilSealed(p: Player) {
   p.sub('closure_date', '2026-11-05');
   p.say('VANTA', 'help');
   await p.run('mkdir ~/dossier');
-  expect(await p.run('dossier seal')).toMatch(/Cannot seal|Scellement impossible/);
+  expect(await p.run('dossier seal')).toMatch(/Cannot seal|Impossible de sceller/);
   await p.run('cp /missions/m03/nexus_archive.db ~/dossier/');
   await p.run('cp ~/Downloads/gramtele_meta.db ~/dossier/');
   await p.run('curl -s -o ~/dossier/press.pdf http://nexus-labs.test/news/nx417-topline.pdf');
@@ -188,7 +191,7 @@ async function finaleUntilSealed(p: Player) {
   await p.run('curl -s -o ~/dossier/halden.pdf http://orion-security.test/reports/halden-freight.pdf');
   // Editing an exhibit breaks it.
   await p.run('echo tampered >> ~/dossier/press.pdf');
-  expect(await p.run('dossier seal')).toMatch(/Cannot seal|Scellement impossible/);
+  expect(await p.run('dossier seal')).toMatch(/Cannot seal|Impossible de sceller/);
   await p.run('curl -s -o ~/dossier/press.pdf http://nexus-labs.test/news/nx417-topline.pdf');
   expect(await p.run('dossier seal')).toMatch(/Sealed|scellé/);
   expect(p.g.state.sealed).toBe(true);
@@ -285,11 +288,80 @@ describe('the scene remembers', () => {
     old.missions.m01 = { status: 'done', objectives: [], optionals: [], answers: {}, wrong: [], hints: {}, commands: 0 };
     old.threads.NULL = { messages: [{ id: 1, from: 'NULL', text: 'Received. Forty credits released.', at: 0 }], unread: 0, archived: false, visible: true, pinned: true };
     const g = new GameEngine(old);
-    expect(g.state.version).toBe(2);
+    expect(g.state.version).toBe(SAVE_VERSION);
     expect(g.state.standing).toBe(60);
     expect(g.state.flags['clean:m01']).toBe(true);
     expect(g.state.firedBeats).toContain('lg_m1');
     expect(g.state.pendingMessages.filter((m) => m.thread === 'lowlight')).toEqual([]);
+  });
+
+  it('upgrades English sentences stored in old saves, and leaves the player\'s own words alone', () => {
+    const old = newState();
+    old.version = 2;
+    old.handle = 'veteran';
+    old.flags = { signed_up: true };
+    old.journal = [
+      { at: 0, kind: 'decision', text: 'You gave NULL the town where Elin Maret lives.' },
+      { at: 0, kind: 'story', text: 'Completed "{title}".', vars: { title: 'A Quiet Introduction' } },
+      { at: 0, kind: 'note', text: 'Completed' },
+    ];
+    old.evidence = [
+      { id: 'archive-db', title: 'Nexus archive database image', summary: 'Collected by you. Not linked to the case file.', source: 'Assignment m03', hash: 'x', at: 0 },
+      { id: 'mine', title: 'mine.txt', summary: 'Collected by you. Not linked to the case file.', source: 'Workbench', hash: 'y', at: 0 },
+    ];
+    const g = new GameEngine(old);
+    expect(g.state.version).toBe(SAVE_VERSION);
+    expect(g.state.journal[0].text).toBe('§missions.m02.report.sections.handover.options.full.decision');
+    expect(g.state.journal[1].text).toBe(ui('completed_title'));
+    expect(g.state.journal[1].vars?.title).toBe('§missions.m01.title');
+    expect(g.state.journal[2].text).toBe('Completed');
+    expect(g.state.evidence[0].source).toBe('§evidence.archive-db.source');
+    expect(g.state.evidence[1].title).toBe('mine.txt');
+    expect(g.state.evidence[1].source).toBe(ui('workbench'));
+  });
+
+  it('upgrades assignment files stored in old saves, so they follow the language', () => {
+    const first = new GameEngine(newState());
+    const english = lineIn('en', '§missions.m02.files.0') as string;
+    const disk = first.fileSystem('workbench');
+    disk.mkdir('/missions/m02', undefined, true);
+    disk.write('/missions/m02/brief.txt', english);
+    const old = newState();
+    old.version = 2;
+    old.fs = { workbench: disk.serialize() };
+    const g = new GameEngine(old);
+    const node = g.fileSystem('workbench').stat('/missions/m02/brief.txt');
+    expect(node.k === 'f' && node.data).toBe('§missions.m02.files.0');
+    expect(g.fileSystem('workbench').read('/missions/m02/brief.txt')).toBe(tr('§missions.m02.files.0'));
+  });
+
+  it('a refused report explains itself in text, never in keys', () => {
+    const p = new Player();
+    p.g.state.missions.m03 = { status: 'active', objectives: [], optionals: [], answers: {}, wrong: [], hints: {}, commands: 0 };
+    const r = p.g.fileReport('m03', { 'why-audit': 'hidden', relationship: 'true', control: 'mfa' });
+    expect(r.passed).toBe(false);
+    expect(r.feedback.length).toBe(3);
+    for (const f of r.feedback) {
+      expect(tr(f.section)).not.toContain('§');
+      expect(tr(f.text)).not.toContain('§');
+      expect(tr(f.text).length).toBeGreaterThan(10);
+    }
+  });
+
+  it('a file the player appends to keeps the text they were reading', () => {
+    const p = new Player();
+    p.g.state.flags.signed_up = true;
+    const fs = p.g.fileSystem('workbench');
+    fs.write('/tmp/brief.txt', '§missions.m01.files.0');
+    fs.write('/tmp/brief.txt', 'mine\n', undefined, { append: true });
+    const text = fs.read('/tmp/brief.txt');
+    expect(text.endsWith('mine\n')).toBe(true);
+    expect(text).toContain('whoami');
+    expect(text).not.toContain('§');
+  });
+
+  it('text that merely starts with the key mark is the player\'s own, not a missing line', () => {
+    expect(tr('§ not one of ours')).toBe('§ not one of ours');
   });
 });
 

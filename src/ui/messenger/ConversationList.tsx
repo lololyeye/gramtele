@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { CHARACTERS, THREAD_ORDER } from '../../data/characters';
 import { presenceOf } from '../../game/presence';
-import { tr, trn } from '../../i18n';
+import { tr, T, Tn } from '../../i18n';
 import type { ChatMessage, ThreadId } from '../../game/types';
 import { Avatar } from '../components/Avatar';
 import { Icon, IconButton } from '../components/Icon';
@@ -11,7 +11,7 @@ import { MissionCard } from './MissionCard';
 
 function preview(m: ChatMessage | undefined, id: ThreadId): string {
   if (!m) return tr(CHARACTERS[id].tagline);
-  if (m.invite && !m.text) return tr('Assignment');
+  if (m.invite && !m.text) return T('assignment');
   return m.text ? tr(m.text) : (m.attachment?.name ?? '');
 }
 
@@ -25,7 +25,7 @@ function Row({ id, active, onOpen, index }: { id: ThreadId; active: boolean; onO
   const draft = !active && s.drafts[id]?.trim();
   const waiting = !!g.choicesFor(id)?.choices.length;
   const online = c.kind === 'contact' ? presenceOf(c, g.now()).online : undefined;
-  const who = last?.from === 'me' ? tr('You') : c.kind === 'group' && last && last.from !== 'sys' ? senderName(last.from) : null;
+  const who = last?.from === 'me' ? T('you_2') : c.kind === 'group' && last && last.from !== 'sys' ? senderName(last.from) : null;
   return (
     <li style={{ animationDelay: `${Math.min(index, 8) * 24}ms` }}>
       <button type="button" className={active ? 'conv active' : 'conv'} aria-current={active} onClick={onOpen}>
@@ -35,19 +35,19 @@ function Row({ id, active, onOpen, index }: { id: ThreadId; active: boolean; onO
             <span className="conv-name">
               {c.kind === 'group' && <Icon name="group" size={14} />}
               <strong>{tr(c.handle)}</strong>
-              {t.muted && <span className="conv-flag" title={tr('Muted')}><Icon name="mute" size={13} /></span>}
+              {t.muted && <span className="conv-flag" title={T('muted')}><Icon name="mute" size={13} /></span>}
             </span>
             {last && <time>{listStamp(last.at, g.now())}</time>}
           </span>
           <span className="conv-line">
             <span className="conv-preview">
-              {typing ? <em>{tr('typing…')}</em> : draft ? <><b className="draft">{tr('Draft:')}</b> {draft}</> : <>{who && <b>{who}: </b>}{preview(last, id)}</>}
+              {typing ? <em>{T('typing_2')}</em> : draft ? <><b className="draft">{T('draft')}</b> {draft}</> : <>{who && <b>{who}: </b>}{preview(last, id)}</>}
             </span>
             <span className="conv-side">
-              {t.pinned && <span className="conv-flag" title={tr('Pinned')}><Icon name="pin" size={13} /></span>}
+              {t.pinned && <span className="conv-flag" title={T('pinned')}><Icon name="pin" size={13} /></span>}
               {t.unread > 0
-                ? <span key={t.unread} className={t.muted ? 'badge quiet' : 'badge'} aria-label={trn('{n} unread message', '{n} unread messages', t.unread)}>{t.unread}</span>
-                : waiting && <span className="awaiting" title={tr('Waiting for your answer')} role="img" aria-label={tr('Waiting for your answer')} />}
+                ? <span key={t.unread} className={t.muted ? 'badge quiet' : 'badge'} aria-label={Tn('n_unread_message', 'n_unread_messages', t.unread)}>{t.unread}</span>
+                : waiting && <span className="awaiting" title={T('waiting_for_your_answer')} role="img" aria-label={T('waiting_for_your_answer')} />}
             </span>
           </span>
         </span>
@@ -92,26 +92,26 @@ export function ConversationList({ active, onOpen }: { active: ThreadId; onOpen:
   const m = g.activeMissionDef();
 
   return (
-    <nav className="conv-column" aria-label={tr('Conversations')}>
+    <nav className="conv-column" aria-label={T('conversations')}>
       <header className="conv-head">
         <div className="conv-title">
-          {archived && <IconButton icon="back" size={18} label={tr('Back to conversations')} onClick={() => setArchived(false)} />}
-          <h1>{archived ? tr('Archived') : tr('Conversations')}</h1>
+          {archived && <IconButton icon="back" size={18} label={T('back_to_conversations')} onClick={() => setArchived(false)} />}
+          <h1>{archived ? T('archived') : T('conversations')}</h1>
         </div>
         <label className="conv-search">
           <Icon name="search" size={16} />
-          <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder={tr('Search people and messages')} aria-label={tr('Search people and messages')} onKeyDown={(e) => { if (e.key === 'Escape') setQuery(''); }} />
-          {query && <IconButton icon="close" size={14} label={tr('Clear search')} onClick={() => setQuery('')} />}
+          <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder={T('search_people_and_messages')} aria-label={T('search_people_and_messages')} onKeyDown={(e) => { if (e.key === 'Escape') setQuery(''); }} />
+          {query && <IconButton icon="close" size={14} label={T('clear_search')} onClick={() => setQuery('')} />}
         </label>
       </header>
       <div className="conv-scroll">
         <ul className="conv-list">
           {ordered.map((id, i) => <Row key={id} id={id} index={i} active={id === active} onOpen={() => onOpen(id)} />)}
-          {!ordered.length && !hits.length && <li className="empty-line">{q ? tr('Nobody by that name.') : tr('Nothing here.')}</li>}
+          {!ordered.length && !hits.length && <li className="empty-line">{q ? T('nobody_by_that_name') : T('nothing_here')}</li>}
         </ul>
         {hits.length > 0 && (
           <section className="conv-hits">
-            <h2>{tr('In messages')}</h2>
+            <h2>{T('in_messages')}</h2>
             <ul>
               {hits.map((h) => (
                 <li key={h.message.id}>
@@ -130,7 +130,7 @@ export function ConversationList({ active, onOpen }: { active: ThreadId; onOpen:
         {!archived && archivedCount > 0 && !q && (
           <button type="button" className="conv-archive" onClick={() => setArchived(true)}>
             <Icon name="archive" size={18} />
-            <span>{tr('Archived conversations')}</span>
+            <span>{T('archived_conversations')}</span>
             <small>{archivedCount}</small>
           </button>
         )}

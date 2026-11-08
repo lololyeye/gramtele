@@ -1,7 +1,9 @@
+import { EN_UI, UiKey } from './en/ui';
+
 /**
- * Translation layer. English is the source language and the code holds English strings;
- * every other language is a catalog that maps a source string to its translation.
- * Saves keep the source text, so switching language re-renders old messages too.
+ * Language layer. Everything the game writes lives in one dataset per language, reached by key.
+ * Saves keep keys, so switching language re-renders old messages too.
+ * Web pages and manual pages still go through a catalog keyed by their source text. See docs/LOCALIZATION.md.
  *
  * No React here: the engine and the terminal commands use it as well.
  */
@@ -20,18 +22,28 @@ let current: Language = 'en';
 // ---------- written lines ----------
 
 /**
- * Everything characters say lives in one dataset per language, written separately and reached by key.
  * A line is never derived from another language, and a missing one is never replaced by another language:
- * it fails loudly while developing and shows a visible marker in production. See docs/LOCALIZATION.md.
+ * it fails loudly while developing and shows a visible marker in production.
  */
 export const LINE = '§';
 const lineSets: Partial<Record<Language, Catalog>> = {};
 let lineVars: Record<string, string> = {};
 const reported = new Set<string>();
 
+/** Adds to what the language already has: dialogue, missions and the interface each bring their own set. */
 export function registerLines(lang: Language, lines: Map<string, string>): void {
-  lineSets[lang] = lines;
+  const set = (lineSets[lang] ??= new Map());
+  for (const [k, v] of lines) set.set(k, v);
 }
+
+/** Turns a language's interface table into lines. */
+export const uiLines = (table: Record<UiKey, string>): Map<string, string> =>
+  new Map(Object.entries(table).map(([k, v]) => [`ui.${k}`, v]));
+
+registerLines('en', uiLines(EN_UI));
+
+/** An interface text as a stored key, for constants and saves that are read through tr() later. */
+export const ui = (key: UiKey): string => lineKey(`ui.${key}`);
 
 /** Values for the {placeholders} characters use, such as the player's handle. */
 export function setLineVars(vars: Record<string, string>): void {
@@ -46,6 +58,12 @@ export function lineIn(lang: Language, text: string): string | null {
   return lineSets[lang]?.get(text.slice(LINE.length)) ?? null;
 }
 
+/** Saves from before the datasets hold the English sentence itself. This finds its key, so they can be upgraded once. */
+export function keyOfEnglish(text: string): string | null {
+  for (const [k, v] of lineSets.en ?? []) if (v === text) return lineKey(k);
+  return null;
+}
+
 export function lineKeys(lang: Language): string[] {
   return [...(lineSets[lang]?.keys() ?? [])];
 }
@@ -53,6 +71,8 @@ export function lineKeys(lang: Language): string[] {
 function fillLine(text: string): string {
   const found = lineIn(current, text);
   if (found !== null) return found;
+  // In no language at all: not one of our keys, so it is the player's own text that happens to start with the mark.
+  if (LANGUAGES.every((l) => lineIn(l.id, text) === null)) return text;
   const message = `Missing ${current} line: ${text.slice(LINE.length)}`;
   if (import.meta.env?.DEV || import.meta.env?.MODE === 'test') throw new Error(message);
   if (!reported.has(text)) {
@@ -83,7 +103,7 @@ export function hasTranslation(text: string, lang: Language): boolean {
   return isLine(text) ? lineIn(lang, text) !== null : (catalogs[lang]?.has(text) ?? false);
 }
 
-/** Interface and mission strings go through the catalog. Unknown strings, like what the player typed, pass through. Lines come from their own dataset. */
+/** Reads a stored key in the current language. Unknown text, like what the player typed, passes through. Web and manual pages come from the catalog. */
 export function tr(text: string, vars?: Record<string, string | number>): string {
   const line = isLine(text);
   let out = line ? fillLine(text) : current === 'en' ? text : (catalogs[current]?.get(text) ?? text);
@@ -92,10 +112,15 @@ export function tr(text: string, vars?: Record<string, string | number>): string
   return out;
 }
 
-/** Chooses between "one" and "many" forms, then translates. French treats 0 as singular. */
-export function trn(one: string, many: string, n: number, vars?: Record<string, string | number>): string {
+/** An interface text in the current language. The key is checked at compile time. */
+export function T(key: UiKey, vars?: Record<string, string | number>): string {
+  return tr(ui(key), vars);
+}
+
+/** Chooses between the "one" and "many" keys. French treats 0 as singular. */
+export function Tn(one: UiKey, many: UiKey, n: number, vars?: Record<string, string | number>): string {
   const singular = current === 'fr' ? n <= 1 : n === 1;
-  return tr(singular ? one : many, { n, ...vars });
+  return T(singular ? one : many, { n, ...vars });
 }
 
 // ---------- language selection ----------

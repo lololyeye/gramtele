@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { tr } from '../../i18n';
+import { T } from '../../i18n';
 import type { ThreadId } from '../../game/types';
 import { useSession } from '../session';
 import { ChatHeader, PinnedBanner, ThreadSearch } from './ChatHeader';
@@ -73,7 +73,7 @@ export function MessengerView() {
   return (
     <div className={`messenger ${s.conversationOpen ? 'conversation-open' : ''} ${details ? 'details-open' : ''}`}>
       <ConversationList active={active} onOpen={open} />
-      <section className="chat" aria-label={tr('Conversation')} key={active}>
+      <section className="chat" aria-label={T('conversation')} key={active}>
         <ChatHeader
           thread={active}
           onBack={() => { s.conversationOpen = false; s.notify(); }}
