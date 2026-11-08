@@ -34,7 +34,7 @@ export function Toasts() {
   return (
     <div className="toasts" role="status" aria-live="polite">
       {visible.map((t) => (
-        <div key={t.id} className={`toast ${t.kind}`}>
+        <div key={t.id} className={`toast toast-${t.kind}`}>
           <button type="button" className="toast-main" onClick={() => {
             g.dismissToast(t.id);
             if (t.thread) s.openThread(t.thread);
