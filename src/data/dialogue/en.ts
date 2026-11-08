@@ -1,5 +1,5 @@
 import { b64encode } from '../../game/commands/forensic';
-import { FRAGMENTS } from './fragments';
+import { FRAGMENTS, hex, rot13 } from './fragments';
 import type { DialogueSet } from './format';
 
 /**
@@ -7,11 +7,6 @@ import type { DialogueSet } from './format';
  * Voices are defined in docs/VOICES.md. Read that before touching a line.
  */
 
-const hex = (s: string) => [...new TextEncoder().encode(s)].map((b) => b.toString(16).padStart(2, '0')).join('');
-const rot13 = (s: string) => s.replace(/[a-z]/gi, (c) => {
-  const base = c <= 'Z' ? 65 : 97;
-  return String.fromCharCode(((c.charCodeAt(0) - base + 13) % 26) + base);
-});
 
 const ACCEPT = { label: 'Accept the assignment', reply: 'I will take it.' };
 const DECLINE = { label: 'Decline for now', reply: 'Not this one.' };

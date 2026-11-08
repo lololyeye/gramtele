@@ -3,15 +3,11 @@ import { ROOT } from '../filesystem/vfs';
 import type { Command, FullScreen } from '../terminal/types';
 import { isoTime, pad, padEnd, parseArgs } from './args';
 import { pagerFor } from './text';
+import { manual } from './manual';
 
 const whoami: Command = {
   name: 'whoami',
-  man: {
-    name: 'print the current user name',
-    synopsis: ['whoami'],
-    description: 'Prints the user name your shell runs as. Your access to every file depends on this.',
-    why: 'Often the very first command on any system. Who you are decides what you can touch.',
-  },
+  man: manual('whoami', ['whoami']),
   run(ctx) {
     ctx.line(ctx.sh.userName(ctx.id.uid));
     return 0;
@@ -20,12 +16,7 @@ const whoami: Command = {
 
 const id: Command = {
   name: 'id',
-  man: {
-    name: 'print user and group identity',
-    synopsis: ['id'],
-    description: 'Prints your numeric user id (uid), primary group (gid) and all groups. Uid 0 is root. Group membership often grants more access than the user itself.',
-    why: 'Being in an unexpected group, like "adm" or "lab", is a common way people end up able to read more than they should.',
-  },
+  man: manual('id', ['id']),
   run(ctx) {
     const u = ctx.id;
     const groups = u.groups.map((g) => `${g}(${ctx.sh.groupName(g)})`).join(',');
@@ -36,12 +27,7 @@ const id: Command = {
 
 const uname: Command = {
   name: 'uname',
-  man: {
-    name: 'print system information',
-    synopsis: ['uname [-a] [-s] [-n] [-r] [-m]'],
-    description: 'Prints the kernel name. -a prints everything, including hostname, kernel release and architecture.',
-    options: [['-a', 'all information'], ['-n', 'network hostname'], ['-r', 'kernel release'], ['-m', 'machine hardware']],
-  },
+  man: manual('uname', ['uname [-a] [-s] [-n] [-r] [-m]']),
   run(ctx) {
     const a = parseArgs(ctx.argv.slice(1), { flags: 'asnrvmo' });
     const host = ctx.sh.frame.profile.hostname;
@@ -62,7 +48,7 @@ const uname: Command = {
 
 const hostname: Command = {
   name: 'hostname',
-  man: { name: 'show the system host name', synopsis: ['hostname'], description: 'Prints the name of this machine. When you work across several hosts, check it before you run anything.' },
+  man: manual('hostname', ['hostname']),
   run(ctx) {
     ctx.line(ctx.sh.frame.profile.hostname);
     return 0;
@@ -71,12 +57,7 @@ const hostname: Command = {
 
 const date: Command = {
   name: 'date',
-  man: {
-    name: 'print the system date and time',
-    synopsis: ['date', 'date -u'],
-    description: 'Prints the current date and time. This workbench runs on UTC, like most servers.',
-    why: 'Time zones are the classic trap in timeline work. Normalize everything to UTC.',
-  },
+  man: manual('date', ['date', 'date -u']),
   run(ctx) {
     ctx.line(new Date(ctx.sh.host.now()).toUTCString().replace('GMT', 'UTC'));
     return 0;
@@ -99,14 +80,7 @@ function procTable(ctx: { sh: { frame: { profile: { hostname: string; user: stri
 
 const ps: Command = {
   name: 'ps',
-  man: {
-    name: 'report running processes',
-    synopsis: ['ps', 'ps aux', 'ps -ef'],
-    description: 'Lists processes. Alone it only shows your own terminal. "ps aux" shows every process on the machine with its owner, resource usage and full command line.',
-    options: [['aux', 'all processes, BSD format'], ['-ef', 'all processes, full format']],
-    examples: [['ps aux | grep relay', 'is that service running, and as whom?']],
-    why: 'Command lines are revealing. A surprising process, or a surprising owner, is often the first sign something is wrong.',
-  },
+  man: manual('ps', ['ps', 'ps aux', 'ps -ef']),
   run(ctx) {
     const all = ctx.argv.slice(1).some((a) => /aux|ax|-e/.test(a));
     const rows = procTable(ctx);
@@ -125,12 +99,7 @@ const ps: Command = {
 
 const top: Command = {
   name: 'top',
-  man: {
-    name: 'display processes live',
-    synopsis: ['top'],
-    description: 'Shows a continually updated view of processes and load. Press q to quit.',
-    why: 'Useful to see what is consuming a machine right now, and what wakes up on a schedule.',
-  },
+  man: manual('top', ['top']),
   run(ctx) {
     const rows = procTable(ctx);
     if (!ctx.isTty) {
@@ -175,13 +144,7 @@ const top: Command = {
 
 const history: Command = {
   name: 'history',
-  man: {
-    name: 'show the command history',
-    synopsis: ['history [N]', 'history -c'],
-    description: 'Lists commands you ran. "!!" reruns the last one, "!N" reruns number N. Up and down arrows walk through it.',
-    options: [['-c', 'clear the session history']],
-    why: 'Shell history is one of the first artifacts an investigator reads on a compromised box. It does not capture everything, and it can be cleared.',
-  },
+  man: manual('history', ['history [N]', 'history -c']),
   run(ctx) {
     const a = ctx.argv[1];
     if (a === '-c') {
@@ -197,7 +160,7 @@ const history: Command = {
 
 const clear: Command = {
   name: 'clear',
-  man: { name: 'clear the terminal screen', synopsis: ['clear'], description: 'Clears the visible screen. Your history is untouched. Ctrl+L does the same.' },
+  man: manual('clear', ['clear']),
   run(ctx) {
     if (ctx.isTty) ctx.sh.clearRequested = true;
     return 0;
@@ -206,12 +169,7 @@ const clear: Command = {
 
 const env: Command = {
   name: 'env',
-  man: {
-    name: 'print environment variables',
-    synopsis: ['env', 'printenv [NAME]'],
-    description: 'Prints every environment variable for this shell. Programs inherit these, and they configure a lot of behaviour.',
-    why: 'Secrets left in environment variables are a recurring finding. Anyone who can read a process environment can read them.',
-  },
+  man: manual('env', ['env', 'printenv [NAME]']),
   run(ctx) {
     for (const k of Object.keys(ctx.sh.env).sort()) ctx.line(`${k}=${ctx.sh.env[k]}`);
     return 0;
@@ -235,12 +193,7 @@ const printenv: Command = {
 
 const exportCmd: Command = {
   name: 'export',
-  man: {
-    name: 'set an environment variable',
-    synopsis: ['export NAME=VALUE', 'export'],
-    description: 'Sets a variable for this shell and anything it starts. With no argument, lists exported variables.',
-    examples: [['export CASE=m02', 'then: echo $CASE']],
-  },
+  man: manual('export', ['export NAME=VALUE', 'export']),
   run(ctx) {
     if (ctx.argv.length < 2) {
       for (const k of Object.keys(ctx.sh.env).sort()) ctx.line(`declare -x ${k}="${ctx.sh.env[k]}"`);
@@ -261,7 +214,7 @@ const exportCmd: Command = {
 
 const unset: Command = {
   name: 'unset',
-  man: { name: 'remove an environment variable', synopsis: ['unset NAME...'], description: 'Removes shell variables.' },
+  man: manual('unset', ['unset NAME...']),
   run(ctx) {
     for (const a of ctx.argv.slice(1)) delete ctx.sh.env[a];
     return 0;
@@ -270,12 +223,7 @@ const unset: Command = {
 
 const which: Command = {
   name: 'which',
-  man: {
-    name: 'locate a command',
-    synopsis: ['which COMMAND...'],
-    description: 'Tells you where a command lives on the $PATH, and so which program actually runs when you type its name.',
-    why: 'If a directory earlier on the PATH holds a fake "ls", that is what runs. Knowing the real path matters.',
-  },
+  man: manual('which', ['which COMMAND...']),
   run(ctx) {
     let code = 0;
     for (const n of ctx.argv.slice(1)) {
@@ -294,7 +242,7 @@ const BUILTINS = new Set(['cd', 'export', 'unset', 'history', 'exit', 'help', 't
 
 const type: Command = {
   name: 'type',
-  man: { name: 'describe how a name would be interpreted', synopsis: ['type NAME...'], description: 'Says whether a name is a shell builtin or a program on disk.' },
+  man: manual('type', ['type NAME...']),
   run(ctx) {
     let code = 0;
     for (const n of ctx.argv.slice(1)) {
@@ -355,13 +303,7 @@ function wrap(s: string, w: number): string[] {
 
 const man: Command = {
   name: 'man',
-  man: {
-    name: 'read the manual for a command',
-    synopsis: ['man COMMAND'],
-    description: 'Opens the manual page for a command. Scroll with arrows or space; q quits. When something does not work, read the man page before you do anything else.',
-    examples: [['man grep', 'every option grep accepts here']],
-    why: 'Professionals read man pages constantly. Nobody remembers every flag.',
-  },
+  man: manual('man', ['man COMMAND']),
   run(ctx) {
     const n = ctx.argv[1];
     if (!n) {
@@ -382,7 +324,7 @@ const man: Command = {
 
 const help: Command = {
   name: 'help',
-  man: { name: 'list available commands', synopsis: ['help', 'help COMMAND'], description: 'Lists what is available on this workbench, grouped by purpose. "help COMMAND" gives a one-line summary.' },
+  man: manual('help', ['help', 'help COMMAND']),
   run(ctx) {
     const n = ctx.argv[1];
     if (n) {
@@ -411,7 +353,7 @@ const help: Command = {
 
 const exit: Command = {
   name: 'exit',
-  man: { name: 'leave the current shell', synopsis: ['exit [N]'], description: 'Closes an ssh session and returns to the previous host. On the workbench itself there is nowhere to go back to.' },
+  man: manual('exit', ['exit [N]']),
   run(ctx) {
     if (ctx.sh.popSession()) {
       ctx.line(`logout\nConnection to remote host closed.`);
@@ -426,13 +368,7 @@ const logout: Command = { ...exit, name: 'logout' };
 
 const sudo: Command = {
   name: 'sudo',
-  man: {
-    name: 'run a command as another user',
-    synopsis: ['sudo COMMAND', 'sudo -l'],
-    description: 'Runs one command as root, if the sudoers policy allows you. "sudo -l" lists what you are allowed to run. Every use is logged.',
-    options: [['-l', 'list your permitted commands']],
-    why: 'A broad sudo rule is a privilege escalation waiting to happen. "sudo -l" is one of the first checks in any audit.',
-  },
+  man: manual('sudo', ['sudo COMMAND', 'sudo -l']),
   async run(ctx) {
     const policy = ctx.sh.frame.profile.sudoers ?? [];
     const user = ctx.sh.frame.profile.user;
@@ -466,12 +402,7 @@ const sudo: Command = {
 
 const shCmd: Command = {
   name: 'sh',
-  man: {
-    name: 'run a shell script',
-    synopsis: ['sh FILE', 'bash FILE', './FILE'],
-    description: 'Runs the commands in a text file, one line at a time. "./file" needs execute permission (chmod +x); "sh file" only needs read permission. Read a script before you run it.',
-    why: 'Never run a script you have not read. This is the single most useful rule in this manual.',
-  },
+  man: manual('sh', ['sh FILE', 'bash FILE', './FILE']),
   run(ctx) {
     const f = ctx.argv[1];
     if (!f) {
@@ -484,8 +415,8 @@ const shCmd: Command = {
 
 const bash: Command = { ...shCmd, name: 'bash' };
 
-const trueCmd: Command = { name: 'true', man: { name: 'do nothing, successfully', synopsis: ['true'], description: 'Exits with status 0.' }, run: () => 0 };
-const falseCmd: Command = { name: 'false', man: { name: 'do nothing, unsuccessfully', synopsis: ['false'], description: 'Exits with status 1.' }, run: () => 1 };
+const trueCmd: Command = { name: 'true', man: manual('true', ['true']), run: () => 0 };
+const falseCmd: Command = { name: 'false', man: manual('false', ['false']), run: () => 1 };
 
 const dateIso = isoTime;
 void dateIso;

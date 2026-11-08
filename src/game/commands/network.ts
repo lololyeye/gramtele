@@ -3,6 +3,7 @@ import type { CmdCtx, Command } from '../terminal/types';
 import { FetchResult, inCidr, ipToInt, isIp, VirtualNet } from '../virtual-network/net';
 import type { DnsType } from '../virtual-network/types';
 import { pad, padEnd, parseArgs } from './args';
+import { manual } from './manual';
 
 function net(ctx: CmdCtx): VirtualNet {
   return ctx.sh.host.services.net as VirtualNet;
@@ -23,14 +24,7 @@ const unreachable = (target: string) => `${target}: Name or service not known (t
 const ping: Command = {
   name: 'ping',
   tool: 'net',
-  man: {
-    name: 'test reachability with ICMP echo',
-    synopsis: ['ping [-c COUNT] HOST'],
-    description: 'Sends ICMP echo requests and reports replies and round-trip time. A reply means the host is up and ICMP is allowed. No reply does not mean it is down: many hosts silently drop ICMP. Output also shows the resolved IP and TTL.',
-    options: [['-c N', 'number of packets (default here 4)']],
-    examples: [['ping -c 2 nexus-labs.test', 'is it reachable? how far?']],
-    why: 'First troubleshooting step, and a lesson in the limits of evidence: silence proves nothing.',
-  },
+  man: manual('ping', ['ping [-c COUNT] HOST']),
   run(ctx) {
     const a = parseArgs(ctx.argv.slice(1), { values: 'cWwi', flags: 'nq' });
     if (a.unknown) return ctx.fail(`invalid option ${a.unknown}`, 2);
@@ -69,13 +63,7 @@ const ping: Command = {
 const traceroute: Command = {
   name: 'traceroute',
   tool: 'net',
-  man: {
-    name: 'show the route packets take to a host',
-    synopsis: ['traceroute HOST'],
-    description: 'Sends packets with increasing TTL. Each router along the path that drops one reports back, revealing the path hop by hop. "* * *" means a router did not answer, not that the path is broken.',
-    examples: [['traceroute nexus-labs.test', 'who carries this traffic?']],
-    why: 'Router names leak who operates a network. If two "unrelated" companies share a gateway, that is interesting.',
-  },
+  man: manual('traceroute', ['traceroute HOST']),
   run(ctx) {
     const target = ctx.argv[1];
     if (!target) return ctx.fail('usage: traceroute HOST', 2);
@@ -104,13 +92,7 @@ const traceroute: Command = {
 const ip: Command = {
   name: 'ip',
   tool: 'net',
-  man: {
-    name: 'show network interfaces and routes',
-    synopsis: ['ip addr', 'ip a', 'ip route', 'ip r'],
-    description: '"ip addr" lists interfaces and their addresses. "ip route" shows the routing table: where packets go. The "default" route is the gateway used for anything not otherwise known. The CIDR suffix /24 means the first 24 bits identify the network, so 10.40.0.0/24 spans 10.40.0.0 to 10.40.0.255.',
-    examples: [['ip a', 'what is my address?'], ['ip r', 'what is my gateway?']],
-    why: 'Before you investigate a network, know where you stand in it.',
-  },
+  man: manual('ip', ['ip addr', 'ip a', 'ip route', 'ip r']),
   run(ctx) {
     const sub = ctx.argv[1] ?? '';
     const local = localIp(ctx);
@@ -137,14 +119,7 @@ function localIp(_ctx: CmdCtx): string {
 const ss: Command = {
   name: 'ss',
   tool: 'net',
-  man: {
-    name: 'show sockets',
-    synopsis: ['ss -tuln', 'ss -tan'],
-    description: 'Lists network sockets on this machine. TCP is connection-oriented and reliable; UDP is fire-and-forget. A port in LISTEN state is a service waiting for connections; ESTAB is a live connection.',
-    options: [['-t', 'TCP'], ['-u', 'UDP'], ['-l', 'listening only'], ['-n', 'numeric, do not resolve names'], ['-a', 'all states'], ['-p', 'show the owning process']],
-    examples: [['ss -tuln', 'what is this machine offering to the network?']],
-    why: 'Every listening port is attack surface. Know what is open and why.',
-  },
+  man: manual('ss', ['ss -tuln', 'ss -tan']),
   run(ctx) {
     const a = parseArgs(ctx.argv.slice(1), { flags: 'tulnapH' });
     if (a.unknown) return ctx.fail(`invalid option ${a.unknown}`, 2);
@@ -176,14 +151,7 @@ const DNS_TYPES: DnsType[] = ['A', 'AAAA', 'CNAME', 'MX', 'NS', 'TXT', 'SOA', 'P
 const dig: Command = {
   name: 'dig',
   tool: 'net',
-  man: {
-    name: 'query DNS',
-    synopsis: ['dig NAME [TYPE] [+short]', 'dig -x IP'],
-    description: 'Asks DNS for records about a name. A: IPv4 address. CNAME: an alias for another name. MX: mail servers. NS: authoritative name servers. TXT: free text, used for SPF, verification tokens and much else. The answer section is what matters; +short prints only that.',
-    options: [['TYPE', 'A (default), MX, NS, TXT, CNAME, SOA'], ['+short', 'just the answers'], ['-x IP', 'reverse lookup (PTR)']],
-    examples: [['dig nexus-labs.test', 'the full exchange'], ['dig nexus-labs.test TXT +short', 'who may send mail for this domain?'], ['dig -x 203.0.113.21', 'what name does this address claim?']],
-    why: 'DNS is public by design. A company can hide many things, but its DNS records tell you who its vendors, mail hosts and infrastructure really are.',
-  },
+  man: manual('dig', ['dig NAME [TYPE] [+short]', 'dig -x IP']),
   run(ctx) {
     const args = ctx.argv.slice(1);
     const short = args.includes('+short');
@@ -256,7 +224,7 @@ function footer(ctx: CmdCtx): number {
 const host: Command = {
   name: 'host',
   tool: 'net',
-  man: { name: 'simple DNS lookup', synopsis: ['host NAME'], description: 'A terse alternative to dig: prints addresses and mail servers for a name.' },
+  man: manual('host', ['host NAME']),
   run(ctx) {
     const name = ctx.argv[1];
     if (!name) return ctx.fail('usage: host NAME');
@@ -278,13 +246,7 @@ const host: Command = {
 const whois: Command = {
   name: 'whois',
   tool: 'osint',
-  man: {
-    name: 'look up domain registration',
-    synopsis: ['whois DOMAIN'],
-    description: 'Queries the registration record for a domain: registrar, dates, and sometimes the registrant. Privacy services often hide the owner, but creation dates alone are telling. A "ten year old firm" with a five-month-old domain is a red flag.',
-    examples: [['whois lindgate.test', 'how old is this company, really?']],
-    why: 'Registration data is one of the cheapest ways to test a claim about an organization.',
-  },
+  man: manual('whois', ['whois DOMAIN']),
   run(ctx) {
     const d = ctx.argv[1];
     if (!d) return ctx.fail('usage: whois DOMAIN');
@@ -303,14 +265,7 @@ const whois: Command = {
 const nmap: Command = {
   name: 'nmap',
   tool: 'net',
-  man: {
-    name: 'network mapper (simulated, lab only)',
-    synopsis: ['nmap [-sV] [-p PORTS] TARGET', 'nmap -sn 10.40.0.0/24'],
-    description: 'Discovers hosts and open ports. TCP scans show whether a port is open (a service answered), closed (host answered, nothing listening) or filtered (a firewall swallowed the probe). In this simulation nmap only reaches hosts defined inside the laboratory. On a real network, scan only what you have written permission to scan.',
-    options: [['-sn', 'host discovery only, no port scan'], ['-sV', 'probe open ports for service and version'], ['-p LIST', 'specific ports: -p 22,80,443 or -p 1-1024']],
-    examples: [['nmap -sn 10.40.0.0/24', 'who is alive on this subnet?'], ['nmap -sV vault-02.lab.test', 'what does this host expose?']],
-    why: 'Defenders run this against their own networks to see what attackers would see. Unauthorized scanning can be illegal, which is why permission comes first.',
-  },
+  man: manual('nmap', ['nmap [-sV] [-p PORTS] TARGET', 'nmap -sn 10.40.0.0/24']),
   run(ctx) {
     const a = parseArgs(ctx.argv.slice(1), { flags: 'nvT', values: 'ps', long: {} });
     const target = a.rest[0];
@@ -395,33 +350,7 @@ function saveTo(ctx: CmdCtx, path: string, r: FetchResult): void {
 const curl: Command = {
   name: 'curl',
   tool: 'osint',
-  man: {
-    name: 'transfer data with URLs (simulated network)',
-    synopsis: ['curl [OPTIONS] URL'],
-    description: 'Speaks HTTP from the command line and shows you what a browser hides. A request has a method, a path, headers and maybe a body; a response has a status code, headers and a body. Codes: 2xx success, 3xx redirect, 4xx you did something wrong, 5xx the server did. All traffic stays inside the simulated network.',
-    options: [
-      ['-i', 'include response headers'],
-      ['-I', 'HEAD request: headers only'],
-      ['-v', 'verbose: show the whole exchange, including TLS certificate'],
-      ['-L', 'follow redirects'],
-      ['-s', 'silent'],
-      ['-o FILE', 'save the body to FILE'],
-      ['-O', 'save under the name from the URL'],
-      ['-X METHOD', 'set the method, e.g. POST'],
-      ['-d DATA', 'send a form body (implies POST)'],
-      ['-H "K: V"', 'add a request header'],
-      ['-b "k=v"', 'send cookies, or read them from a file'],
-      ['-c FILE', 'save received cookies to FILE'],
-      ['-A AGENT', 'set the User-Agent'],
-      ['-F field=@file', 'upload a file as multipart form'],
-    ],
-    examples: [
-      ['curl -I http://nexus-labs.test/', 'what server is this? what headers does it set?'],
-      ['curl -d "user=x&pass=y" -i http://portal.nexus-labs.test/login', 'submit a login form by hand'],
-      ['curl -b "session=abc" http://portal.nexus-labs.test/account', 'send a cookie'],
-    ],
-    why: 'A browser is a polite interface over this. Seeing raw HTTP is how you understand what actually protects a web application, and what merely looks like it does.',
-  },
+  man: manual('curl', ['curl [OPTIONS] URL']),
   async run(ctx) {
     const a = parseArgs(ctx.argv.slice(1), {
       flags: 'iIvLsSOkfGg',
@@ -599,13 +528,7 @@ function saveCookies(ctx: CmdCtx, jar: string, res: FetchResult): void {
 const wget: Command = {
   name: 'wget',
   tool: 'osint',
-  man: {
-    name: 'download files (simulated network)',
-    synopsis: ['wget [-q] [-O FILE] URL'],
-    description: 'Downloads a URL to a file, by default named after the last part of the URL. curl prints by default, wget saves by default.',
-    options: [['-O FILE', 'output file'], ['-q', 'quiet']],
-    examples: [['wget http://trailtalk.test/uploads/ridge_0412.jpg', 'grab a document for offline analysis']],
-  },
+  man: manual('wget', ['wget [-q] [-O FILE] URL']),
   async run(ctx) {
     const a = parseArgs(ctx.argv.slice(1), { flags: 'q', values: 'OP' });
     if (a.unknown) return ctx.fail(`invalid option ${a.unknown}`, 2);

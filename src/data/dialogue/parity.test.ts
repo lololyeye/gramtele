@@ -1,10 +1,17 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { CHARACTERS } from '../characters';
 import { lineIn, lineKey, lineKeys, registerLines, setLanguage, tr } from '../../i18n';
+import { documentKeys } from '../../i18n/documents';
+import { EN_MAN } from '../../i18n/en/man';
+import { FR_MAN } from '../../i18n/fr/man';
 import { EN_UI } from '../../i18n/en/ui';
 import '../../i18n/fr';
 import { CHAPTERS, MISSIONS } from '../missions';
 import { ACHIEVEMENTS, ENDINGS, EVIDENCE, SKILL_NODES, SKILL_TITLES } from '../progression';
+import { seedWorkbench } from '../world/hosts';
+import { buildSites } from '../world/sites';
+import { ALL_COMMANDS, HELP_GROUPS } from '../../game/commands';
+import { VFS } from '../../game/filesystem/vfs';
 import { BEATS } from '.';
 import { FILE_COUNTS, GROUP_SPEAKERS, SMALL_COUNTS } from './smalltalk';
 import type { Tier } from '../reputation';
@@ -75,6 +82,24 @@ function neededKeys(): string[] {
   return [...out];
 }
 
+/** Every key the websites, their documents and the workbench ask for. The portal and the map answer from code. */
+function worldKeys(): string[] {
+  const out = ['pages.portal.title', 'pages.portal.heading', 'pages.portal.restricted', 'pages.maps.harrowmere', 'pages.maps.aldric', 'pages.maps.nowhere'];
+  for (const site of buildSites()) {
+    const pages = (site as unknown as { pages?: Record<string, { body: string }> }).pages;
+    for (const page of Object.values(pages ?? {})) out.push(...documentKeys(page.body));
+  }
+  const disk = new VFS({ now: () => 0 } as never);
+  seedWorkbench(disk);
+  const walk = (node: unknown): void => {
+    const n = node as { k: string; c?: Record<string, unknown>; data?: string };
+    if (n.k === 'd') Object.values(n.c ?? {}).forEach(walk);
+    else if (n.data?.startsWith('§')) out.push(n.data.slice(1));
+  };
+  walk((disk as unknown as { serialize(): unknown }).serialize());
+  return out;
+}
+
 /** Every key a mission, a record screen or the interface asks for. */
 function writtenKeys(): string[] {
   const out = new Set<string>();
@@ -90,6 +115,10 @@ function writtenKeys(): string[] {
   walk(ACHIEVEMENTS);
   walk(EVIDENCE);
   for (const k of Object.keys(EN_UI)) out.add(`ui.${k}`);
+  walk(ALL_COMMANDS.map((c) => c.man));
+  walk(HELP_GROUPS);
+  walk(BEATS.flatMap((b) => b.messages.map((m) => m.attachment)));
+  for (const k of worldKeys()) out.add(k);
   return [...out];
 }
 
@@ -125,6 +154,7 @@ describe('both languages tell the same story', () => {
   it('keeps the same clues: addresses, devices, contractor numbers and every figure', () => {
     const encoded = (k: string) => isEncoded(en(k)) || /^[a-z ]+$/.test(en(k)) && /fragment/.test(k);
     const different = neededKeys()
+      .filter((k) => !/^files\.(fragment|invoice)/.test(k))
       .filter((k) => !encoded(k) && !k.startsWith('e1_fragment') && !k.startsWith('e2_fragment') && !k.startsWith('e3_fragment') && !k.startsWith('char.'))
       .filter((k) => clues(en(k)).join() !== clues(fr(k)).join())
       .map((k) => `${k}: ${clues(en(k))} / ${clues(fr(k))}`);
@@ -135,9 +165,32 @@ describe('both languages tell the same story', () => {
     const neutral = /^(\W*|NULL|Sessions|Blackwell Holdings, Special Engagements\.|bWFuIGJhc2U2NA==)$/;
     // One word, or a list of commands: "Terminal", "JOIN", "sudo -l" are the same in both.
     const literal = /^[\p{L}\d .,+/()_{}-]*$/u;
-    const same = neededKeys().filter((k) => en(k) === fr(k) && !neutral.test(en(k)) && !isEncoded(en(k)) && !k.startsWith('e2_fragment') && !FORMAT.test(en(k)))
+    const nameOrLabel = /^pages\..*\.(title|footer|services)$|^man\.\w+\.options\./;
+    const same = neededKeys().filter((k) => !nameOrLabel.test(k)).filter((k) => en(k) === fr(k) && !neutral.test(en(k)) && !isEncoded(en(k)) && !k.startsWith('e2_fragment') && !FORMAT.test(en(k)))
       .filter((k) => !((k.startsWith('ui.') || k.includes('.resources.') || k.includes('.hints.') || k.startsWith('skills.') || k.startsWith('nodes.') || k.includes('.title') || k.includes('.term') || k.includes('.review.concepts') || k.includes('.placeholder')) && (literal.test(en(k)) && en(k).split(' ').length <= 6 || k.includes('.hints.'))));
     expect(same).toEqual([]);
+  });
+
+  it('the web keeps the same links on every page, in both languages', () => {
+    const links = (t: string) => [...t.matchAll(/href="([^"]+)"/g)].map((m) => m[1]).sort().join(' ');
+    expect(worldKeys().filter((k) => links(en(k)) !== links(fr(k)))).toEqual([]);
+  });
+
+  it('the manual documents the same flags and examples in both languages', () => {
+    const shape = (t: typeof EN_MAN) => Object.entries(t).map(([name, p]) => [name, Object.keys(p.options ?? {}).join(), Object.keys(p.examples ?? {}).join(), Boolean(p.why)]);
+    expect(shape(FR_MAN)).toEqual(shape(EN_MAN));
+  });
+
+  it('every command that has a manual page has its text, and nothing is left over', () => {
+    const named = new Set(ALL_COMMANDS.flatMap((c) => (c.man?.name.match(/^§man\.(.+)\.name$/) ?? []).slice(1)));
+    expect(Object.keys(EN_MAN).filter((k) => !named.has(k))).toEqual([]);
+  });
+
+  it('files on the workbench keep their paths and references', () => {
+    const facts = (t: string) => (t.match(/\/[\w./-]+|\bc-\d{4}\b|\bNOPASSWD\b|\bsubmit\b/g) ?? []).sort().join(' ');
+    const files = writtenKeys().filter((k) => k.startsWith('files.') && !/^files\.(fragment|invoice)/.test(k));
+    expect(files.length).toBeGreaterThan(5);
+    expect(files.filter((k) => facts(en(k)) !== facts(fr(k)))).toEqual([]);
   });
 
   it('refuses to fall back to another language when a line is missing', () => {
@@ -176,7 +229,7 @@ describe('missions say the same thing in both languages', () => {
 
   it('nothing written for the player assumes their gender', () => {
     const assumed = /(?<!\p{L})(vous (êtes|vous êtes) \p{L}+é|engagé|orienté|situé|relié|parti de)(?!\p{L})/iu;
-    const flagged = writtenKeys().filter((k) => assumed.test(fr(k))).map((k) => `${k}: ${fr(k)}`);
+    const flagged = writtenKeys().filter((k) => !/^(pages|docs)\./.test(k)).filter((k) => assumed.test(fr(k))).map((k) => `${k}: ${fr(k)}`);
     expect(flagged).toEqual([]);
   });
 });

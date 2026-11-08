@@ -92,7 +92,7 @@ src/
     dialogue/  script.ts (la logique), en.ts et fr.ts (les textes, écrits séparément)
     missions/  early.ts et finale.ts (la logique), en.ts et fr.ts (les textes)
   ui/     interface React : messagerie, vues, styles
-  i18n/   langues : détection, interface en anglais et en français, catalogue des pages web et du manuel
+  i18n/   langues : détection, interface et manuel en anglais et en français
 docs/     bible de l'histoire (attention, elle dévoile tout), voix des personnages, localisation
 ```
 

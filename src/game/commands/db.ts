@@ -1,6 +1,7 @@
 import type { DbEngine, QuerySet } from '../databases/engine';
 import type { FileNode } from '../filesystem/vfs';
 import type { CmdCtx, Command, LineProgram } from '../terminal/types';
+import { manual } from './manual';
 
 export interface SqlObserver {
   (db: string, sql: string, result: QuerySet): void;
@@ -90,18 +91,7 @@ async function dotCommand(line: string, dbId: string, engine: DbEngine, s: Setti
 const sqlite3: Command = {
   name: 'sqlite3',
   tool: 'db',
-  man: {
-    name: 'query an SQLite database',
-    synopsis: ['sqlite3 FILE', 'sqlite3 FILE "SQL"', 'sqlite3 -header -column FILE "SQL"'],
-    description: 'A real SQLite engine. With a file alone it opens an interactive prompt. Commands starting with a dot (.tables, .schema, .headers on, .mode column) talk to the tool; everything else is SQL and ends with a semicolon. Evidence images are mounted read-only: a write attempt is refused, as it should be when you are preserving evidence.',
-    options: [['-header', 'show column names'], ['-column', 'aligned columns'], ['-csv', 'CSV output'], ['-readonly', 'open read-only']],
-    examples: [
-      ['sqlite3 archive.db ".tables"', 'what is in here?'],
-      ['sqlite3 archive.db ".schema staff"', 'what columns does this table have?'],
-      ['sqlite3 -header -column archive.db "SELECT * FROM staff LIMIT 5"', 'look before you reason'],
-    ],
-    why: 'Most of the world\'s facts live in tables. Reading a schema tells you what an organization thought was worth recording, and audit tables tell you what it did about it.',
-  },
+  man: manual('sqlite3', ['sqlite3 FILE', 'sqlite3 FILE "SQL"', 'sqlite3 -header -column FILE "SQL"']),
   async run(ctx) {
     const args = ctx.argv.slice(1);
     const s: Settings = { headers: false, mode: 'list' };

@@ -1,5 +1,5 @@
 import { b64encode } from '../../game/commands/forensic';
-import { FRAGMENTS } from './fragments';
+import { FRAGMENTS, hex, rot13 } from './fragments';
 import type { DialogueSet } from './format';
 
 /**
@@ -13,11 +13,6 @@ import type { DialogueSet } from './format';
  * - ROOTLESS n'écrit aucun accent. C'est sa marque, comme les tirets.
  */
 
-const hex = (s: string) => [...new TextEncoder().encode(s)].map((b) => b.toString(16).padStart(2, '0')).join('');
-const rot13 = (s: string) => s.replace(/[a-z]/gi, (c) => {
-  const base = c <= 'Z' ? 65 : 97;
-  return String.fromCharCode(((c.charCodeAt(0) - base + 13) % 26) + base);
-});
 
 const ACCEPT = { label: 'Accepter la mission', reply: 'Je prends.' };
 const DECLINE = { label: 'Refuser pour l’instant', reply: 'Pas celle-là.' };

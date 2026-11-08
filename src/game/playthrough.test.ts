@@ -335,6 +335,26 @@ describe('the scene remembers', () => {
     expect(g.fileSystem('workbench').read('/missions/m02/brief.txt')).toBe(tr('§missions.m02.files.0'));
   });
 
+  it('upgrades the workbench files stored in old saves, and leaves the player\'s own alone', () => {
+    const first = new GameEngine(newState());
+    const disk = first.fileSystem('workbench');
+    const english = lineIn('en', '§files.lowtide') as string;
+    disk.write('/home/player/.cache/.notes_41', english);
+    disk.write('/home/player/copy.txt', english);
+    disk.write('/home/player/mine.txt', 'my own notes\n');
+    const old = newState();
+    old.version = 3;
+    old.fs = { workbench: disk.serialize() };
+    const g = new GameEngine(old);
+    expect(g.state.version).toBe(SAVE_VERSION);
+    const fs = g.fileSystem('workbench');
+    for (const path of ['/home/player/.cache/.notes_41', '/home/player/copy.txt']) {
+      const n = fs.stat(path);
+      expect(n.k === 'f' && n.data).toBe('§files.lowtide');
+    }
+    expect(fs.read('/home/player/mine.txt')).toBe('my own notes\n');
+  });
+
   it('a refused report explains itself in text, never in keys', () => {
     const p = new Player();
     p.g.state.missions.m03 = { status: 'active', objectives: [], optionals: [], answers: {}, wrong: [], hints: {}, commands: 0 };

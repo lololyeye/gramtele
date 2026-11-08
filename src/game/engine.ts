@@ -4,7 +4,7 @@
  */
 import { CHARACTERS } from '../data/characters';
 import { CHAT_REACTIONS, smalltalkFor } from '../data/dialogue/smalltalk';
-import { isLine, lineIn, setLineVars, tr, ui, T, keyOfEnglish } from '../i18n';
+import { isLine, lineIn, setLineVars, tr, ui, T, keyOfEnglish, worldFileKey } from '../i18n';
 import { CLEAN_BONUS, rankOf, standingOf, TABLE, tierOf } from '../data/reputation';
 import { gramteleMetaSeed } from '../data/databases/gramtele-meta';
 import { nexusArchiveSeed } from '../data/databases/nexus-archive';
@@ -17,7 +17,7 @@ import { buildSites } from '../data/world/sites';
 import { ALL_COMMANDS, HELP_GROUPS } from './commands';
 import { QuerySet, DbEngine } from './databases/engine';
 import type { GameApi } from './commands/game';
-import { DirNode, FileNode, installFile, normalize, ROOT, SeedFile, VFS } from './filesystem/vfs';
+import { DirNode, FileNode, installFile, VNode, normalize, ROOT, SeedFile, VFS } from './filesystem/vfs';
 import { Shell } from './terminal/shell';
 import type { ShellEvent, ShellHost } from './terminal/types';
 import type {
@@ -26,7 +26,7 @@ import type {
 } from './types';
 import { NetEvent, VirtualNet } from './virtual-network/net';
 
-export const SAVE_VERSION = 3;
+export const SAVE_VERSION = 4;
 const START_CLOCK = Date.parse('2026-10-12T21:47:00Z');
 
 export function levelFor(xp: number): number {
@@ -189,6 +189,7 @@ export class GameEngine implements GameApi {
   private migrate(): void {
     if (this.state.version < 2) this.migrateScene();
     if (this.state.version < 3) this.migrateText();
+    if (this.state.version < 4) this.migrateWorldFiles();
     this.state.version = SAVE_VERSION;
   }
 
@@ -211,6 +212,23 @@ export class GameEngine implements GameApi {
         if (!fs.exists(f.file.path)) continue; // Not offered yet: it will arrive with its key.
         const node = fs.stat(f.file.path);
         if (node.k === 'f' && node.data !== undefined) node.data = upgrade(node.data);
+      }
+    }
+  }
+
+  /** Saves from before the world had its own datasets kept the English text of the workbench's files. They become keys, copies included. */
+  private migrateWorldFiles(): void {
+    const upgrade = (text: string | undefined) => (text === undefined ? text : (worldFileKey(text) ?? text));
+    const walk = (node: VNode): void => {
+      if (node.k === 'd') Object.values(node.c).forEach(walk);
+      else if (node.k === 'f') node.data = upgrade(node.data);
+    };
+    for (const host of Object.values(this.state.fs)) walk(host as DirNode);
+    for (const thread of Object.values(this.state.threads)) {
+      for (const m of thread.messages) {
+        if (!m.attachment) continue;
+        m.attachment.preview = upgrade(m.attachment.preview) as string;
+        if (m.attachment.file) m.attachment.file.data = upgrade(m.attachment.file.data);
       }
     }
   }

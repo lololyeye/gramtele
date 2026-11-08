@@ -11,3 +11,9 @@ export const KELPIE_INVOICE = {
   en: 'INVOICE 2026-0093 / ISSUED BY kelpie / AMOUNT 40 CREDITS / STATUS UNPAID, DISPUTED BY CLIENT',
   fr: 'FACTURE 2026-0093 / EMISE PAR kelpie / MONTANT 40 CREDITS / STATUT IMPAYEE, CONTESTEE PAR LE CLIENT',
 };
+
+export const hex = (s: string) => [...new TextEncoder().encode(s)].map((b) => b.toString(16).padStart(2, '0')).join('');
+export const rot13 = (s: string) => s.replace(/[a-z]/gi, (c) => {
+  const base = c <= 'Z' ? 65 : 97;
+  return String.fromCharCode(((c.charCodeAt(0) - base + 13) % 26) + base);
+});

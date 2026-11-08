@@ -1,39 +1,15 @@
-import { getLanguage, tr } from './index';
+import { getLanguage, Language, lineIn, tr } from './index';
 
 /**
- * Localizes a whole simulated document as it leaves a site: the text between HTML tags, or the text
- * lines and title of a PDF. Markup, addresses and links are left alone, so the same pages exist in
- * every language and links, paths and evidence tags keep working.
+ * Simulated documents are stored once, as layout with keys where the words go (`§pages.nexus.home.body`).
+ * This writes the words in as a document leaves a site. Layout, addresses and links stay the same in every language.
  */
-export function localizeDocument(body: string): string {
-  if (getLanguage() === 'en' || !body) return body;
-  if (body.startsWith('%PDF')) {
-    return body
-      .replace(/\((.*)\) Tj/g, (_, line: string) => `(${line ? tr(line) : line}) Tj`)
-      .replace(/\/Title \((.*)\)/, (_, title: string) => `/Title (${tr(title)})`);
-  }
-  if (!/^<!doctype html/i.test(body)) return tr(body);
-  const styled: string[] = [];
-  const shielded = body
-    .replace(/<style[\s\S]*?<\/style>/gi, (m) => `<style data-s="${styled.push(m) - 1}"></style>`)
-    .replace(/<pre[\s\S]*?<\/pre>/gi, (m) => m.replace(/>([^<]*)</g, (_, t: string) => `>\u0001${t}<`));
-  const out = shielded
-    .replace(/>([^<]+)</g, (whole, text: string) => {
-      if (text.startsWith('\u0001')) return `>${text.slice(1)}<`;
-      const trimmed = text.trim();
-      if (!trimmed) return whole;
-      return `>${text.replace(trimmed, tr(trimmed))}<`;
-    })
-    .replace(/<style data-s="(\d+)"><\/style>/g, (_, i: string) => styled[Number(i)])
-    .replace('<html lang="en">', `<html lang="${getLanguage()}">`);
-  return out;
+const KEY = /§[\w.-]+/g;
+
+export function localizeDocument(body: string, lang: Language = getLanguage()): string {
+  const filled = body.replace(KEY, (key) => (lang === getLanguage() ? tr(key) : (lineIn(lang, key) ?? '')));
+  return filled.replace('<html lang="en">', `<html lang="${lang}">`);
 }
 
-/** Every piece of text in a document, in the form the catalogs use. Used by the completeness test. */
-export function documentStrings(body: string): string[] {
-  if (body.startsWith('%PDF')) {
-    return [...[...body.matchAll(/\((.*)\) Tj/g)].map((m) => m[1]), /\/Title \((.*)\)/.exec(body)?.[1] ?? ''].filter(Boolean);
-  }
-  const bare = body.replace(/<style[\s\S]*?<\/style>/gi, '').replace(/<pre[\s\S]*?<\/pre>/gi, '');
-  return [...bare.matchAll(/>([^<]+)</g)].map((m) => m[1].trim()).filter(Boolean);
-}
+/** Every key a document asks for. Used by the completeness checks. */
+export const documentKeys = (body: string): string[] => (body.match(KEY) ?? []).map((k) => k.slice(1));

@@ -1,7 +1,5 @@
-import { b64encode } from '../../game/commands/forensic';
 import type { Attachment, Beat, Choice, Cond, Effect, JournalKind, Msg, ThreadId } from '../../game/types';
 import { lineKey } from '../../i18n';
-import { FRAGMENTS, KELPIE_INVOICE } from './fragments';
 
 /**
  * The conversations as logic only: who speaks, when, and what each choice changes.
@@ -31,14 +29,10 @@ const active = (id: string): Cond => ({ missionActive: id });
 const flag = (f: string): Cond => ({ flag: f });
 const from = (who: Msg['from'], extra: Partial<RawMsg> = {}): RawMsg => ({ from: who, ...extra });
 const when = (c: Cond, who?: Msg['from']): RawMsg => ({ if: c, ...(who ? { from: who } : {}) });
-const hex = (s: string) => [...new TextEncoder().encode(s)].map((b) => b.toString(16).padStart(2, '0')).join('');
-const rot13 = (s: string) => s.replace(/[a-z]/gi, (c) => {
-  const base = c <= 'Z' ? 65 : 97;
-  return String.fromCharCode(((c.charCodeAt(0) - base + 13) % 26) + base);
-});
 
-function textFile(name: string, data: string): Attachment {
-  return { name, kind: 'text', preview: data, file: { path: `/home/player/Downloads/${name}`, data: `${data}\n`, uid: 1000 } };
+/** An encoded file: its contents are in the world's text, in each language. */
+function textFile(name: string, key: string): Attachment {
+  return { name, kind: 'text', preview: lineKey(`files.${key}.preview`), file: { path: `/home/player/Downloads/${name}`, data: lineKey(`files.${key}.file`), uid: 1000 } };
 }
 
 const exportFile = (): Attachment => ({
@@ -48,7 +42,6 @@ const exportFile = (): Attachment => ({
   file: { path: '/home/player/Downloads/gramtele_meta.db', db: 'gramtele_meta', tag: 'gramtele-meta', uid: 1000, mode: 0o444 },
 });
 
-const ENCODED = { one: b64encode(FRAGMENTS.en[0]), two: rot13(FRAGMENTS.en[1]), three: hex(FRAGMENTS.en[2]), invoice: b64encode(KELPIE_INVOICE.en) };
 const INVOICE_PATH = '/home/player/Downloads/kelpie_invoice.b64';
 
 /** Mission offer with a real decline: the price goes up, and the world notices. */
@@ -219,7 +212,7 @@ const RAW_BEATS: RawBeat[] = [
     when: flag('n2_closed'),
     delay: 45000,
     expires: true,
-    messages: [from('kelpie', { attachment: textFile('kelpie_invoice.b64', ENCODED.invoice) }), from('MOTH'), from('ostrich_farm')],
+    messages: [from('kelpie', { attachment: textFile('kelpie_invoice.b64', 'invoice') }), from('MOTH'), from('ostrich_farm')],
     choices: [
       {
         id: 'expose',
@@ -235,7 +228,7 @@ const RAW_BEATS: RawBeat[] = [
     thread: 'ECHO',
     when: flag('n2_closed'),
     delay: 22000,
-    messages: [{ attachment: textFile('fragment_01.txt', ENCODED.one) }],
+    messages: [{ attachment: textFile('fragment_01.txt', 'fragment_01') }],
     choices: [
       { id: 'decoded', if: { signal: 'cmd:base64-d' }, effects: [{ flag: 'e1_answered' }, { rel: ['ECHO', 1] }], then: [{}] },
       { id: 'what', effects: [{ flag: 'e1_answered' }], then: [{}] },
@@ -314,7 +307,7 @@ const RAW_BEATS: RawBeat[] = [
     thread: 'ECHO',
     when: active('m03'),
     delay: 60000,
-    messages: [{ attachment: textFile('fragment_02.txt', ENCODED.two) }, {}],
+    messages: [{ attachment: textFile('fragment_02.txt', 'fragment_02') }, {}],
   },
   {
     id: 'v3_ask',
@@ -360,7 +353,7 @@ const RAW_BEATS: RawBeat[] = [
     thread: 'ECHO',
     when: flag('n3_closed'),
     delay: 25000,
-    messages: [{ attachment: textFile('fragment_03.txt', ENCODED.three) }],
+    messages: [{ attachment: textFile('fragment_03.txt', 'fragment_03') }],
   },
 
   // ---------- Chapter 4: rivals ----------
@@ -563,5 +556,3 @@ export const WORLD_RULES: { when: Cond; effects: Effect[]; id: string }[] = [
   { id: 'archive_ending', when: { all: [{ signal: 'archive-submission' }, active('m05')] }, effects: [{ ending: 'record' }] },
 ];
 
-/** Encoded content is data, not writing: each language carries its own version of the same blob. */
-export const ENCODED_EN = ENCODED;

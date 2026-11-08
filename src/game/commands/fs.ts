@@ -3,6 +3,7 @@ import { globToRegExp } from '../terminal/parser';
 import type { CmdCtx, Command } from '../terminal/types';
 import { ANSI, humanSize, isoTime, lsTime, pad, parseArgs, toBytes } from './args';
 import { sniffType } from './magic';
+import { manual } from './manual';
 
 function colorName(name: string, n: VNode, tty: boolean): string {
   if (!tty) return name;
@@ -33,25 +34,7 @@ function columns(names: { plain: string; shown: string }[], width: number): stri
 
 const ls: Command = {
   name: 'ls',
-  man: {
-    name: 'list directory contents',
-    synopsis: ['ls [-laAhRtrSd1F] [FILE]...'],
-    description: 'Lists files in a directory. Names starting with a dot are hidden unless you pass -a. The long format shows permissions, owner, group, size and modification time.',
-    options: [
-      ['-l', 'long format: mode, links, owner, group, size, time, name'],
-      ['-a', 'include hidden entries, including . and ..'],
-      ['-A', 'include hidden entries, without . and ..'],
-      ['-h', 'human-readable sizes (with -l)'],
-      ['-t', 'sort by modification time, newest first'],
-      ['-S', 'sort by size, largest first'],
-      ['-r', 'reverse the sort'],
-      ['-R', 'recurse into subdirectories'],
-      ['-d', 'list the directory itself, not its contents'],
-      ['-1', 'one entry per line'],
-    ],
-    examples: [['ls -la ~', 'everything in your home, hidden files too'], ['ls -lt /var/log', 'most recently changed logs first']],
-    why: 'Hidden dotfiles are where configuration, shell history and leftovers live. The first habit of any investigator is ls -la.',
-  },
+  man: manual('ls', ['ls [-laAhRtrSd1F] [FILE]...']),
   run(ctx) {
     const a = parseArgs(ctx.argv.slice(1), { flags: 'laAhRtrSd1F', long: { all: 'a', 'almost-all': 'A', 'human-readable': 'h', recursive: 'R', reverse: 'r', directory: 'd' } });
     if (a.unknown) return ctx.fail(`invalid option -- '${a.unknown.replace(/^-+/, '')}'\nTry 'man ls' for more information.`, 2);
@@ -148,13 +131,7 @@ const ls: Command = {
 
 const pwd: Command = {
   name: 'pwd',
-  man: {
-    name: 'print working directory',
-    synopsis: ['pwd'],
-    description: 'Prints the absolute path of the directory you are in. Every relative path you type is resolved from here.',
-    examples: [['pwd', 'where am I?']],
-    why: 'On an unfamiliar box, knowing exactly where you are prevents the expensive mistakes.',
-  },
+  man: manual('pwd', ['pwd']),
   run(ctx) {
     ctx.line(ctx.sh.cwd);
     return 0;
@@ -163,13 +140,7 @@ const pwd: Command = {
 
 const cd: Command = {
   name: 'cd',
-  man: {
-    name: 'change the working directory',
-    synopsis: ['cd [DIR]', 'cd -', 'cd ..'],
-    description: 'Moves your shell to DIR. With no argument, goes to $HOME. "cd -" returns to the previous directory. ".." is the parent directory, "." the current one, and "~" your home. You need execute permission on a directory to enter it.',
-    examples: [['cd /var/log', 'absolute path, starts at the root'], ['cd ../Downloads', 'relative path, starts here']],
-    why: 'Absolute paths start with /. Relative paths start from where you are. Most newcomer confusion comes down to that distinction.',
-  },
+  man: manual('cd', ['cd [DIR]', 'cd -', 'cd ..']),
   run(ctx) {
     const arg = ctx.argv[1];
     if (ctx.argv.length > 2) return ctx.fail('too many arguments');
@@ -194,13 +165,7 @@ const cd: Command = {
 
 const mkdir: Command = {
   name: 'mkdir',
-  man: {
-    name: 'make directories',
-    synopsis: ['mkdir [-p] DIR...'],
-    description: 'Creates directories. Fails if the parent is missing or the directory exists, unless -p is given.',
-    options: [['-p', 'create missing parents, no error if it already exists']],
-    examples: [['mkdir -p ~/cases/m02/notes', 'a full tree in one go']],
-  },
+  man: manual('mkdir', ['mkdir [-p] DIR...']),
   run(ctx) {
     const a = parseArgs(ctx.argv.slice(1), { flags: 'p', long: { parents: 'p' } });
     if (a.unknown) return ctx.fail(`invalid option ${a.unknown}`, 2);
@@ -220,11 +185,7 @@ const mkdir: Command = {
 
 const rmdir: Command = {
   name: 'rmdir',
-  man: {
-    name: 'remove empty directories',
-    synopsis: ['rmdir DIR...'],
-    description: 'Removes a directory only if it is empty. The safe alternative to rm -r.',
-  },
+  man: manual('rmdir', ['rmdir DIR...']),
   run(ctx) {
     if (ctx.argv.length < 2) return ctx.fail('missing operand');
     let code = 0;
@@ -242,12 +203,7 @@ const rmdir: Command = {
 
 const touch: Command = {
   name: 'touch',
-  man: {
-    name: 'create a file or update its timestamp',
-    synopsis: ['touch FILE...'],
-    description: 'Creates an empty file if it does not exist; otherwise sets its modification time to now.',
-    why: 'Timestamps are easy to change. Never treat an mtime as proof on its own.',
-  },
+  man: manual('touch', ['touch FILE...']),
   run(ctx) {
     if (ctx.argv.length < 2) return ctx.fail('missing file operand');
     let code = 0;
@@ -270,14 +226,7 @@ function destFor(ctx: CmdCtx, src: string, dest: string): string {
 
 const cp: Command = {
   name: 'cp',
-  man: {
-    name: 'copy files and directories',
-    synopsis: ['cp [-r] SOURCE DEST', 'cp [-r] SOURCE... DIR'],
-    description: 'Copies files. A directory needs -r. Copies keep the content byte for byte, so the hash of a copy matches the original.',
-    options: [['-r', 'copy directories recursively']],
-    examples: [['cp evidence.log ~/cases/', 'work on a copy, keep the original intact']],
-    why: 'In forensics you never work on the original. You work on verified copies.',
-  },
+  man: manual('cp', ['cp [-r] SOURCE DEST', 'cp [-r] SOURCE... DIR']),
   run(ctx) {
     const a = parseArgs(ctx.argv.slice(1), { flags: 'rRvfpa', long: { recursive: 'r' } });
     if (a.unknown) return ctx.fail(`invalid option ${a.unknown}`, 2);
@@ -316,12 +265,7 @@ const cp: Command = {
 
 const mv: Command = {
   name: 'mv',
-  man: {
-    name: 'move or rename files',
-    synopsis: ['mv SOURCE DEST', 'mv SOURCE... DIR'],
-    description: 'Renames a file, or moves it to another directory. Both operations are the same thing: changing the entry that points to the data.',
-    examples: [['mv draft.txt report.txt', 'rename'], ['mv report.txt ~/Documents/', 'move']],
-  },
+  man: manual('mv', ['mv SOURCE DEST', 'mv SOURCE... DIR']),
   run(ctx) {
     const a = parseArgs(ctx.argv.slice(1), { flags: 'fv' });
     if (a.unknown) return ctx.fail(`invalid option ${a.unknown}`, 2);
@@ -345,13 +289,7 @@ const mv: Command = {
 
 const rm: Command = {
   name: 'rm',
-  man: {
-    name: 'remove files or directories',
-    synopsis: ['rm [-rf] FILE...'],
-    description: 'Deletes directory entries. There is no recycle bin. A directory needs -r. -f silences errors about missing files.',
-    options: [['-r', 'remove directories and their contents'], ['-f', 'ignore missing files, never prompt']],
-    why: 'Deleting a file removes the name, not necessarily the data on disk. That is why forensic recovery works, and why "rm" is not secure erasure.',
-  },
+  man: manual('rm', ['rm [-rf] FILE...']),
   run(ctx) {
     const a = parseArgs(ctx.argv.slice(1), { flags: 'rRfiv', long: { recursive: 'r', force: 'f' } });
     if (a.unknown) return ctx.fail(`invalid option ${a.unknown}`, 2);
@@ -388,13 +326,7 @@ const rm: Command = {
 
 const stat: Command = {
   name: 'stat',
-  man: {
-    name: 'display file status',
-    synopsis: ['stat FILE...'],
-    description: 'Shows the metadata the filesystem keeps about a file: type, size, permissions, owner and timestamps.',
-    examples: [['stat notes.txt', 'when was this last changed, and by whom?']],
-    why: 'File metadata anchors timelines, but it can be altered. Use it as one source among several.',
-  },
+  man: manual('stat', ['stat FILE...']),
   run(ctx) {
     if (ctx.argv.length < 2) return ctx.fail('missing operand');
     let code = 0;
@@ -441,14 +373,7 @@ function parseChmod(spec: string, current: number, isDir: boolean): number | nul
 
 const chmod: Command = {
   name: 'chmod',
-  man: {
-    name: 'change file permissions',
-    synopsis: ['chmod MODE FILE...', 'chmod [-R] MODE DIR'],
-    description: 'Sets who may read (r=4), write (w=2) and execute (x=1) a file, for the owner, the group and everyone else. Modes are octal digits (640) or symbolic (u+x, go-w). Only the owner or root may change them.',
-    options: [['-R', 'apply recursively']],
-    examples: [['chmod +x run.sh', 'make a script executable'], ['chmod 600 key.pem', 'only the owner can read or write']],
-    why: 'A world-readable key or a writable config is one of the most common real findings. 600 for secrets; 755 for programs.',
-  },
+  man: manual('chmod', ['chmod MODE FILE...', 'chmod [-R] MODE DIR']),
   run(ctx) {
     const a = parseArgs(ctx.argv.slice(1), { flags: 'R', long: { recursive: 'R' } });
     const raw = ctx.argv.slice(1).filter((s) => s !== '-R' && s !== '--recursive');
@@ -478,7 +403,7 @@ const chmod: Command = {
 
 const ln: Command = {
   name: 'ln',
-  man: { name: 'make links between files', synopsis: ['ln -s TARGET LINK'], description: 'Creates a symbolic link: a small file that points to another path. Only symbolic links are supported on this filesystem.', options: [['-s', 'make a symbolic link']] },
+  man: manual('ln', ['ln -s TARGET LINK']),
   run(ctx) {
     const a = parseArgs(ctx.argv.slice(1), { flags: 's' });
     if (!a.flags.has('s')) return ctx.fail('only symbolic links are supported here; use -s');
@@ -490,22 +415,7 @@ const ln: Command = {
 
 const find: Command = {
   name: 'find',
-  man: {
-    name: 'search for files in a directory tree',
-    synopsis: ['find [PATH...] [-name GLOB] [-iname GLOB] [-type f|d|l] [-maxdepth N] [-user NAME] [-perm MODE] [-size [+-]N[ckM]]'],
-    description: 'Walks a directory tree and prints every path matching all the tests you give. Unlike ls it looks at everything, hidden files included. Directories you cannot read produce "Permission denied" on stderr; discard those with 2>/dev/null.',
-    options: [
-      ['-name GLOB', 'match the file name (quote the pattern so the shell does not expand it)'],
-      ['-iname GLOB', 'same, ignoring case'],
-      ['-type f|d|l', 'only files, directories or symlinks'],
-      ['-maxdepth N', 'descend at most N levels'],
-      ['-user NAME', 'owned by NAME'],
-      ['-perm MODE', 'exact octal permission bits, e.g. 600'],
-      ['-size +10k', 'larger than 10 KiB; -size -1M is smaller than 1 MiB'],
-    ],
-    examples: [['find /home -type f', 'every regular file under /home'], ['find / -name "*.conf" 2>/dev/null', 'config files, ignoring permission errors']],
-    why: 'When you do not know where something is, find is how you stop guessing.',
-  },
+  man: manual('find', ['find [PATH...] [-name GLOB] [-iname GLOB] [-type f|d|l] [-maxdepth N] [-user NAME] [-perm MODE] [-size [+-]N[ckM]]']),
   run(ctx) {
     const args = ctx.argv.slice(1);
     const roots: string[] = [];
@@ -588,13 +498,7 @@ const find: Command = {
 
 const file: Command = {
   name: 'file',
-  man: {
-    name: 'determine file type',
-    synopsis: ['file FILE...'],
-    description: 'Identifies a file by looking at its content, specifically its leading "magic bytes", not its name. An extension is only a label; the signature tells you what the file actually is.',
-    examples: [['file invoice.pdf', 'is this really a PDF?']],
-    why: 'Attackers and careless people both rename files. Never trust an extension.',
-  },
+  man: manual('file', ['file FILE...']),
   run(ctx) {
     if (ctx.argv.length < 2) return ctx.fail('missing file operand');
     for (const f of ctx.argv.slice(1)) {
@@ -622,7 +526,7 @@ const file: Command = {
 
 const du: Command = {
   name: 'du',
-  man: { name: 'estimate disk usage', synopsis: ['du [-sh] [PATH...]'], description: 'Reports how much space a tree uses.', options: [['-s', 'summary only'], ['-h', 'human-readable']] },
+  man: manual('du', ['du [-sh] [PATH...]']),
   run(ctx) {
     const a = parseArgs(ctx.argv.slice(1), { flags: 'sh' });
     let code = 0;

@@ -3,6 +3,7 @@ import { T, Tn } from '../../i18n';
 import type { CmdCtx, Command } from '../terminal/types';
 import { splitLines } from './args';
 import { sha256 } from './forensic';
+import { manual } from './manual';
 
 /** The narrow surface the in-world case tools use to reach the game layer. */
 export interface GameApi {
@@ -23,11 +24,7 @@ function api(ctx: CmdCtx): GameApi {
 
 const mission: Command = {
   name: 'mission',
-  man: {
-    name: 'show the active assignment',
-    synopsis: ['mission'],
-    description: 'Prints the active mission and the state of its objectives. The same information as the Missions panel, without leaving the keyboard.',
-  },
+  man: manual('mission', ['mission']),
   run(ctx) {
     for (const l of api(ctx).missionStatus()) ctx.line(l);
     return 0;
@@ -36,12 +33,7 @@ const mission: Command = {
 
 const submit: Command = {
   name: 'submit',
-  man: {
-    name: 'file a finding against the active assignment',
-    synopsis: ['submit', 'submit KEY VALUE...'],
-    description: 'With no arguments, lists what the assignment still needs answered. With a key and a value, files a finding. Wrong answers cost nothing but are recorded in your post-mission review. Reason first, then file.',
-    examples: [['submit', 'what is outstanding?'], ['submit uid 1000', 'file a finding']],
-  },
+  man: manual('submit', ['submit', 'submit KEY VALUE...']),
   run(ctx) {
     const [key, ...rest] = ctx.argv.slice(1);
     const a = api(ctx);
@@ -66,11 +58,7 @@ const submit: Command = {
 
 const hint: Command = {
   name: 'hint',
-  man: {
-    name: 'ask for the next hint on an objective',
-    synopsis: ['hint [N]'],
-    description: 'Reveals the next level of hint for the first open objective, or for objective N. Hints start vague and get specific. Using them reduces the bonus for that objective a little, and nothing else. Being stuck is normal.',
-  },
+  man: manual('hint', ['hint [N]']),
   run(ctx) {
     const n = ctx.argv[1] ? Number(ctx.argv[1]) - 1 : undefined;
     ctx.line(api(ctx).hint(n));
@@ -80,13 +68,7 @@ const hint: Command = {
 
 const evidence: Command = {
   name: 'evidence',
-  man: {
-    name: 'manage your evidence locker',
-    synopsis: ['evidence add FILE', 'evidence list', 'evidence verify FILE'],
-    description: 'Registers a file in your locker with a SHA-256 hash taken at the moment of collection, the way chain of custody works. "verify" recomputes a file\'s hash against the locker. Editing a file breaks its link to the original: collect first, annotate copies.',
-    examples: [['evidence add ~/Downloads/ridge_0412.jpg', 'collect and hash a file'], ['evidence list', 'what do I have?']],
-    why: 'Evidence nobody can verify is only a story. Hash at collection, record the source, work on copies.',
-  },
+  man: manual('evidence', ['evidence add FILE', 'evidence list', 'evidence verify FILE']),
   run(ctx) {
     const [sub, file] = ctx.argv.slice(1);
     const a = api(ctx);
@@ -142,12 +124,7 @@ function dossierFiles(ctx: CmdCtx): { path: string; node: FileNode }[] {
 const dossier: Command = {
   name: 'dossier',
   tool: 'dossier',
-  man: {
-    name: 'assemble a verifiable dossier',
-    synopsis: ['dossier status', 'dossier seal'],
-    description: 'Works on the directory ~/dossier. "status" checks each required exhibit by content tag, so renaming a file is fine but editing it is not. "seal" writes ~/dossier.tar with a hash manifest. An archive will not read anything it cannot verify.',
-    examples: [['mkdir ~/dossier && cp evidence.db ~/dossier/', 'build it with ordinary file commands'], ['dossier status', 'what is still missing?']],
-  },
+  man: manual('dossier', ['dossier status', 'dossier seal']),
   run(ctx) {
     const sub = ctx.argv[1] ?? 'status';
     const a = api(ctx);
@@ -184,11 +161,7 @@ const dossier: Command = {
 
 const note: Command = {
   name: 'note',
-  man: {
-    name: 'add a line to your journal',
-    synopsis: ['note TEXT...'],
-    description: 'Appends a timestamped line to your investigation journal. A finding you cannot reproduce from your own notes is a rumour.',
-  },
+  man: manual('note', ['note TEXT...']),
   run(ctx) {
     const t = ctx.argv.slice(1).join(' ');
     if (!t) return ctx.fail('usage: note TEXT...');
@@ -201,13 +174,7 @@ const note: Command = {
 const diff: Command = {
   name: 'diff',
   tool: 'forensics',
-  man: {
-    name: 'compare two files line by line',
-    synopsis: ['diff FILE1 FILE2'],
-    description: 'Shows the lines that differ. "<" lines exist only in the first file, ">" lines only in the second. No output and exit status 0 means the files are identical.',
-    examples: [['diff auth.log rotated/auth.log.1', 'what changed between these two copies?']],
-    why: 'A hash tells you that something changed. diff tells you what.',
-  },
+  man: manual('diff', ['diff FILE1 FILE2']),
   run(ctx) {
     const args = ctx.argv.slice(1).filter((s) => !s.startsWith('-'));
     if (args.length !== 2) return ctx.fail('usage: diff FILE1 FILE2', 2);

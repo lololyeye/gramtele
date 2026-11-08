@@ -444,6 +444,13 @@ export const EN_UI = {
   say_it_to_someone_nobody: 'Say it to someone. Nobody else.',
   about: 'About',
   standing: 'Standing',
+  help_files: 'Navigate and manage files',
+  help_text: 'Read and filter text',
+  help_osint: 'Open source investigation',
+  help_forensics: 'Forensics',
+  help_network: 'Networking',
+  help_databases: 'Databases',
+  help_casework: 'Casework',
 } as const;
 
 export type UiKey = keyof typeof EN_UI;

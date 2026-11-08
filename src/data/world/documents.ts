@@ -1,27 +1,21 @@
 import { makeJpeg, makePdf } from '../../game/commands/magic';
+import { lineKey } from '../../i18n';
+import './en';
 
-/** World documents, referenced by several sites and mission folders. */
+/** World documents: metadata and layout. The words are in en.ts and fr.ts. Metadata stays as the file's author left it. */
+
+const d = (key: string) => lineKey(`docs.${key}`);
 
 export const NEWSLETTER_2021 = makePdf(
   {
-    Title: 'Nexus Labs Staff Bulletin, Q3 2021',
+    Title: d('bulletin.title'),
     Author: 'E. Maret',
     Creator: 'Scrivwell Writer 7.1',
     Producer: 'Scrivwell PDF Export',
     CreationDate: '2021:09:12 18:44:07+00:00',
     ModifyDate: '2021:09:12 18:51:30+00:00',
   },
-  [
-    'Nexus Labs Staff Bulletin, Q3 2021',
-    'From the data desk: the new double-entry checks caught forty-one transcription errors this quarter.',
-    'NX-305 enrolment is on schedule. Thanks to the S02 and S05 site monitors.',
-    '',
-    'Staff corner',
-    'Elin Maret (Data Management) walked the whole Aldric ridge line over the summer holidays.',
-    'She keeps a trail log on TrailTalk as quietfern, if you want the route and the blisters.',
-    '',
-    'Editor: E. Maret. Corrections to the data desk.',
-  ],
+  [d('bulletin.title'), d('bulletin.data_desk'), d('bulletin.enrolment'), '', d('bulletin.corner'), d('bulletin.walk'), d('bulletin.trail'), '', d('bulletin.editor')],
 );
 
 export const RIDGE_PHOTO = makeJpeg({
@@ -50,36 +44,21 @@ export const ALDRIC_PHOTO = makeJpeg(
 
 export const NX417_PRESS = makePdf(
   {
-    Title: 'Calvexin phase III: positive topline',
+    Title: d('press.title'),
     Author: 'Nexus Labs Communications',
     Creator: 'Scrivwell Writer 7.1',
     CreationDate: '2025:03:27 10:12:00+00:00',
     Company: 'Blackwell Diligence',
   },
-  [
-    'Nexus Labs announces positive topline results for Calvexin (NX-417).',
-    'No treatment-related deaths were observed during the trial.',
-    'The safety summary was submitted on 20 March 2025.',
-    'Media contact: press@nexus-labs.test',
-  ],
+  [d('press.topline'), d('press.deaths'), d('press.submitted'), d('press.contact')],
 );
 
 export const HALDEN_REPORT = makePdf(
-  { Title: 'Halden Freight incident: attribution summary', Author: 'S. Reik', Creator: 'Scrivwell Writer 7.1', Company: 'Orion Security', CreationDate: '2024:11:13 21:40:00+00:00' },
-  [
-    'Orion Security attribution summary. Client: Halden Freight.',
-    'The intrusion originated from a contractor workstation, profile gt-workbench, contractor ref c-0031.',
-    'The contractor acted alone. Findings have been shared with the police.',
-    'Confidence: high.',
-  ],
+  { Title: d('halden.title'), Author: 'S. Reik', Creator: 'Scrivwell Writer 7.1', Company: 'Orion Security', CreationDate: '2024:11:13 21:40:00+00:00' },
+  [d('halden.client'), d('halden.origin'), d('halden.alone'), d('halden.confidence')],
 );
 
 export const BRASK_REPORT = makePdf(
-  { Title: 'Brask Utilities incident: attribution summary', Author: 'S. Reik', Creator: 'Scrivwell Writer 7.1', Company: 'Orion Security', CreationDate: '2025:08:21 22:05:00+00:00' },
-  [
-    'Orion Security attribution summary. Client: Brask Utilities.',
-    'The intrusion originated from a contractor workstation, profile gt-workbench, contractor ref c-0041.',
-    'The contractor acted alone. Findings have been shared with the police.',
-    'Confidence: high.',
-  ],
+  { Title: d('brask.title'), Author: 'S. Reik', Creator: 'Scrivwell Writer 7.1', Company: 'Orion Security', CreationDate: '2025:08:21 22:05:00+00:00' },
+  [d('brask.client'), d('brask.origin'), d('brask.alone'), d('brask.confidence')],
 );

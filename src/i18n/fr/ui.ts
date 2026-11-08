@@ -446,4 +446,11 @@ export const FR_UI: Record<UiKey, string> = {
   say_it_to_someone_nobody: 'Dites-le à quelqu’un. À personne d’autre.',
   about: 'À propos',
   standing: 'Réputation',
+  help_files: 'Se déplacer et gérer les fichiers',
+  help_text: 'Lire et filtrer du texte',
+  help_osint: 'Enquête en sources ouvertes',
+  help_forensics: 'Investigation numérique',
+  help_network: 'Réseaux',
+  help_databases: 'Bases de données',
+  help_casework: 'Conduite de l’enquête',
 };

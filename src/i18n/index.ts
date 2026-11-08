@@ -1,9 +1,10 @@
+import { EN_MAN, ManText } from './en/man';
 import { EN_UI, UiKey } from './en/ui';
 
 /**
  * Language layer. Everything the game writes lives in one dataset per language, reached by key.
  * Saves keep keys, so switching language re-renders old messages too.
- * Web pages and manual pages still go through a catalog keyed by their source text. See docs/LOCALIZATION.md.
+ * See docs/LOCALIZATION.md.
  *
  * No React here: the engine and the terminal commands use it as well.
  */
@@ -40,7 +41,22 @@ export function registerLines(lang: Language, lines: Map<string, string>): void 
 export const uiLines = (table: Record<UiKey, string>): Map<string, string> =>
   new Map(Object.entries(table).map(([k, v]) => [`ui.${k}`, v]));
 
+/** Turns a language's manual into lines. Flags and example commands are part of the key. */
+export function manLines(table: Record<string, ManText>): Map<string, string> {
+  const out = new Map<string, string>();
+  for (const [name, page] of Object.entries(table)) {
+    out.set(`man.${name}.name`, page.name);
+    out.set(`man.${name}.description`, page.description);
+    if (page.why) out.set(`man.${name}.why`, page.why);
+    for (const field of ['options', 'examples'] as const) {
+      for (const [k, v] of Object.entries(page[field] ?? {})) out.set(`man.${name}.${field}.${k}`, v);
+    }
+  }
+  return out;
+}
+
 registerLines('en', uiLines(EN_UI));
+registerLines('en', manLines(EN_MAN));
 
 /** An interface text as a stored key, for constants and saves that are read through tr() later. */
 export const ui = (key: UiKey): string => lineKey(`ui.${key}`);
@@ -61,6 +77,12 @@ export function lineIn(lang: Language, text: string): string | null {
 /** Saves from before the datasets hold the English sentence itself. This finds its key, so they can be upgraded once. */
 export function keyOfEnglish(text: string): string | null {
   for (const [k, v] of lineSets.en ?? []) if (v === text) return lineKey(k);
+  return null;
+}
+
+/** The same for the workbench's files only, so that a file the player wrote is left alone. */
+export function worldFileKey(text: string): string | null {
+  for (const [k, v] of lineSets.en ?? []) if (k.startsWith('files.') && v === text) return lineKey(k);
   return null;
 }
 
@@ -103,7 +125,7 @@ export function hasTranslation(text: string, lang: Language): boolean {
   return isLine(text) ? lineIn(lang, text) !== null : (catalogs[lang]?.has(text) ?? false);
 }
 
-/** Reads a stored key in the current language. Unknown text, like what the player typed, passes through. Web and manual pages come from the catalog. */
+/** Reads a stored key in the current language. Unknown text, like what the player typed, passes through. The only catalog left is for messages stored in very old saves. */
 export function tr(text: string, vars?: Record<string, string | number>): string {
   const line = isLine(text);
   let out = line ? fillLine(text) : current === 'en' ? text : (catalogs[current]?.get(text) ?? text);

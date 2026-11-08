@@ -1,15 +1,10 @@
 import type { CmdCtx, Command, FullScreen } from '../terminal/types';
 import { ANSI, eachInput, pad, parseArgs, splitLines } from './args';
+import { manual } from './manual';
 
 const cat: Command = {
   name: 'cat',
-  man: {
-    name: 'concatenate files and print them',
-    synopsis: ['cat [-n] [FILE]...'],
-    description: 'Writes the content of each file to standard output. With no file, reads standard input. Its name comes from "concatenate", since it can join several files.',
-    options: [['-n', 'number all lines']],
-    examples: [['cat notes.txt', 'read a short file'], ['cat a.log b.log > all.log', 'join two logs into one']],
-  },
+  man: manual('cat', ['cat [-n] [FILE]...']),
   run(ctx) {
     const a = parseArgs(ctx.argv.slice(1), { flags: 'n' });
     if (a.unknown) return ctx.fail(`invalid option ${a.unknown}`, 2);
@@ -23,13 +18,7 @@ const cat: Command = {
 
 const echo: Command = {
   name: 'echo',
-  man: {
-    name: 'print text',
-    synopsis: ['echo [-n] [-e] [STRING]...'],
-    description: 'Prints its arguments separated by spaces. The shell expands variables before echo ever sees them, so echo is a handy way to inspect what the shell is doing.',
-    options: [['-n', 'no trailing newline'], ['-e', 'interpret \\n and \\t']],
-    examples: [['echo $HOME', 'print a variable'], ['echo "first note" >> notes.txt', 'append to a file']],
-  },
+  man: manual('echo', ['echo [-n] [-e] [STRING]...']),
   run(ctx) {
     let args = ctx.argv.slice(1);
     let nl = true;
@@ -149,13 +138,7 @@ export function pagerFor(title: string, text: string): FullScreen {
 
 const less: Command = {
   name: 'less',
-  man: {
-    name: 'page through text',
-    synopsis: ['less FILE', 'COMMAND | less'],
-    description: 'Shows a file one screen at a time without loading it all into your scrollback. Keys: j/k or arrows scroll, space pages down, b pages up, g and G go to top and bottom, /word searches, n repeats, q quits.',
-    examples: [['less /var/log/auth.log', 'browse a long log'], ['grep ERROR app.log | less', 'page through results']],
-    why: 'Real logs are thousands of lines long. cat is for short files; less is for everything else.',
-  },
+  man: manual('less', ['less FILE', 'COMMAND | less']),
   run(ctx) {
     const files = ctx.argv.slice(1).filter((s) => !s.startsWith('-'));
     let buf = '';
@@ -175,24 +158,7 @@ const less: Command = {
 function headTail(name: 'head' | 'tail'): Command {
   return {
     name,
-    man:
-      name === 'head'
-        ? {
-            name: 'output the first part of files',
-            synopsis: ['head [-n N] [FILE]...', 'head -N [FILE]'],
-            description: 'Prints the first 10 lines, or the first N with -n.',
-            options: [['-n N', 'number of lines'], ['-c N', 'number of bytes']],
-            examples: [['head -n 5 access.log', 'see the format of a log before you parse it']],
-            why: 'The first thing to do with an unfamiliar data file: look at the shape of it.',
-          }
-        : {
-            name: 'output the last part of files',
-            synopsis: ['tail [-n N] [FILE]...', 'tail -n +N FILE'],
-            description: 'Prints the last 10 lines, or the last N with -n. "-n +N" starts printing at line N instead.',
-            options: [['-n N', 'number of lines'], ['-n +N', 'start at line N'], ['-c N', 'number of bytes']],
-            examples: [['tail -n 20 /var/log/auth.log', 'most recent events'], ['tail -n +2 data.csv', 'skip a header line']],
-            why: 'Logs grow at the bottom. The newest events are at the end.',
-          },
+    man: manual(name, name === 'head' ? ['head [-n N] [FILE]...', 'head -N [FILE]'] : ['tail [-n N] [FILE]...', 'tail -n +N FILE']),
     run(ctx) {
       const argv = ctx.argv.slice(1).map((s) => (/^-\d+$/.test(s) ? `-n${s.slice(1)}` : s));
       const a = parseArgs(argv, { flags: 'qv', values: 'nc', long: { 'lines=': 'n', 'bytes=': 'c' } });
@@ -249,30 +215,7 @@ function compilePattern(pat: string, opts: { ere: boolean; fixed: boolean; word:
 
 const grep: Command = {
   name: 'grep',
-  man: {
-    name: 'print lines that match a pattern',
-    synopsis: ['grep [-ivnclrEowFH] [-A N] [-B N] PATTERN [FILE]...', 'COMMAND | grep PATTERN'],
-    description: 'Filters text line by line, keeping those matching a regular expression. It reads files or a pipe. Put patterns in quotes so the shell leaves them alone.',
-    options: [
-      ['-i', 'ignore case'],
-      ['-v', 'invert: keep lines that do NOT match'],
-      ['-n', 'prefix each match with its line number'],
-      ['-c', 'print only the count of matching lines'],
-      ['-l', 'print only names of files with matches'],
-      ['-r', 'search directories recursively'],
-      ['-E', 'extended regex: + ? | ( ) work without backslashes'],
-      ['-o', 'print only the matching part of the line'],
-      ['-w', 'match whole words only'],
-      ['-F', 'treat the pattern as a fixed string'],
-      ['-A N / -B N', 'also show N lines after / before each match'],
-    ],
-    examples: [
-      ['grep "404" access.log', 'every line containing 404'],
-      ['grep -rl "quietfern" /missions', 'which files mention this handle?'],
-      ['cat auth.log | grep -v "Accepted" | grep -c "Failed"', 'pipelines narrow things down step by step'],
-    ],
-    why: 'Most investigation is filtering. grep turns a million-line log into the twelve lines that matter.',
-  },
+  man: manual('grep', ['grep [-ivnclrEowFH] [-A N] [-B N] PATTERN [FILE]...', 'COMMAND | grep PATTERN']),
   run(ctx) {
     const a = parseArgs(ctx.argv.slice(1), { flags: 'ivnclrREowFHhs', values: 'ABCe', long: { 'ignore-case': 'i', 'invert-match': 'v', 'line-number': 'n', count: 'c', recursive: 'r', 'only-matching': 'o', 'files-with-matches': 'l' } });
     if (a.unknown) return ctx.fail(`invalid option -- '${a.unknown.replace(/^-+/, '')}'\nUsage: grep [OPTION]... PATTERNS [FILE]...`, 2);
@@ -364,13 +307,7 @@ const grep: Command = {
 
 const wc: Command = {
   name: 'wc',
-  man: {
-    name: 'count lines, words and bytes',
-    synopsis: ['wc [-lwc] [FILE]...'],
-    description: 'Counts things. Without flags it prints lines, words and bytes. Most often used at the end of a pipeline to ask "how many?".',
-    options: [['-l', 'lines'], ['-w', 'words'], ['-c', 'bytes']],
-    examples: [['grep "Failed" auth.log | wc -l', 'how many failed logins?']],
-  },
+  man: manual('wc', ['wc [-lwc] [FILE]...']),
   run(ctx) {
     const a = parseArgs(ctx.argv.slice(1), { flags: 'lwcm' });
     if (a.unknown) return ctx.fail(`invalid option ${a.unknown}`, 2);
@@ -404,17 +341,7 @@ function readAllLines(ctx: CmdCtx, files: string[]): { lines: string[]; code: nu
 
 const sort: Command = {
   name: 'sort',
-  man: {
-    name: 'sort lines of text',
-    synopsis: ['sort [-rnufb] [-t SEP] [-k FIELD] [FILE]...'],
-    description: 'Sorts lines alphabetically by default. -n sorts numerically: without it, 100 sorts before 9.',
-    options: [['-r', 'reverse'], ['-n', 'numeric'], ['-u', 'unique: drop duplicates'], ['-f', 'ignore case'], ['-t SEP', 'field separator'], ['-k N', 'sort by field N']],
-    examples: [
-      ['sort users.txt', 'alphabetical'],
-      ['cut -d" " -f1 access.log | sort | uniq -c | sort -rn | head', 'the classic: top talkers in a log'],
-    ],
-    why: 'sort | uniq -c | sort -rn is the frequency analysis every analyst types from muscle memory.',
-  },
+  man: manual('sort', ['sort [-rnufb] [-t SEP] [-k FIELD] [FILE]...']),
   run(ctx) {
     const a = parseArgs(ctx.argv.slice(1), { flags: 'rnufb', values: 'tk' });
     if (a.unknown) return ctx.fail(`invalid option ${a.unknown}`, 2);
@@ -449,13 +376,7 @@ const sort: Command = {
 
 const uniq: Command = {
   name: 'uniq',
-  man: {
-    name: 'filter adjacent repeated lines',
-    synopsis: ['uniq [-cdui] [FILE]'],
-    description: 'Collapses runs of identical adjacent lines. Because it only compares neighbours, you almost always sort first.',
-    options: [['-c', 'prefix each line with its count'], ['-d', 'only show duplicated lines'], ['-u', 'only show lines that are not repeated'], ['-i', 'ignore case']],
-    examples: [['sort users.txt | uniq', 'distinct users'], ['sort users.txt | uniq -d', 'who appears more than once?']],
-  },
+  man: manual('uniq', ['uniq [-cdui] [FILE]']),
   run(ctx) {
     const a = parseArgs(ctx.argv.slice(1), { flags: 'cdui' });
     if (a.unknown) return ctx.fail(`invalid option ${a.unknown}`, 2);
@@ -490,13 +411,7 @@ function parseRanges(spec: string): ((i: number) => boolean) | null {
 
 const cut: Command = {
   name: 'cut',
-  man: {
-    name: 'select columns from each line',
-    synopsis: ['cut -d DELIM -f LIST [FILE]...', 'cut -c LIST [FILE]...'],
-    description: 'Extracts fields or characters from each line. The default delimiter is a tab, not a space, which trips up nearly everyone once.',
-    options: [['-d C', 'field delimiter (one character)'], ['-f LIST', 'fields to keep: 1 or 1,3 or 2-4'], ['-c LIST', 'character positions to keep']],
-    examples: [['cut -d: -f1 /etc/passwd', 'every account name'], ['cut -d" " -f1 access.log', 'first column of a space-separated log']],
-  },
+  man: manual('cut', ['cut -d DELIM -f LIST [FILE]...', 'cut -c LIST [FILE]...']),
   run(ctx) {
     const a = parseArgs(ctx.argv.slice(1), { flags: 's', values: 'dfc' });
     if (a.unknown) return ctx.fail(`invalid option ${a.unknown}`, 2);
@@ -535,14 +450,7 @@ function expandTr(set: string): string {
 
 const tr: Command = {
   name: 'tr',
-  man: {
-    name: 'translate or delete characters',
-    synopsis: ['tr SET1 SET2', 'tr -d SET1', 'tr -s SET1'],
-    description: 'Replaces characters from SET1 with those at the same position in SET2. Reads stdin only. Ranges like a-z work.',
-    options: [['-d', 'delete characters in SET1'], ['-s', 'squeeze runs of repeated characters into one']],
-    examples: [['echo uryyb | tr a-zA-Z n-za-mN-ZA-M', 'ROT13: a letter-shift "cipher" with no key'], ['cat f | tr -s " "', 'collapse runs of spaces']],
-    why: 'ROT13 and friends are encodings, not encryption. If there is no key, there is no secrecy.',
-  },
+  man: manual('tr', ['tr SET1 SET2', 'tr -d SET1', 'tr -s SET1']),
   run(ctx) {
     const a = parseArgs(ctx.argv.slice(1), { flags: 'ds' });
     if (a.unknown) return ctx.fail(`invalid option ${a.unknown}`, 2);
@@ -575,12 +483,7 @@ const tr: Command = {
 
 const sed: Command = {
   name: 'sed',
-  man: {
-    name: 'stream editor (substitution subset)',
-    synopsis: ["sed 's/OLD/NEW/[gi]' [FILE]...", "sed -n 'Np' [FILE]", "sed -n 'A,Bp' [FILE]", "sed '/RE/d' [FILE]"],
-    description: 'Edits text as it streams past. This workbench supports the common forms: substitution, printing line ranges and deleting matching lines.',
-    examples: [["sed 's/ERROR/!!/g' app.log", 'replace every occurrence'], ["sed -n '10,20p' access.log", 'just lines 10 to 20']],
-  },
+  man: manual('sed', ["sed 's/OLD/NEW/[gi]' [FILE]...", "sed -n 'Np' [FILE]", "sed -n 'A,Bp' [FILE]", "sed '/RE/d' [FILE]"]),
   run(ctx) {
     const a = parseArgs(ctx.argv.slice(1), { flags: 'nE', long: { quiet: 'n' } });
     if (a.unknown) return ctx.fail(`invalid option ${a.unknown}`, 2);
@@ -623,12 +526,7 @@ const sed: Command = {
 
 const awk: Command = {
   name: 'awk',
-  man: {
-    name: 'pattern-directed field printing (subset)',
-    synopsis: ["awk [-F SEP] '{print $1, $3}' [FILE]...", "awk [-F SEP] '/RE/ {print $2}' [FILE]...", "awk '$9 == 500 {print $1}' [FILE]..."],
-    description: 'Splits each line into fields ($1, $2..., $NF the last, $0 the whole line) and prints what you ask for. Unlike cut, the default separator is any run of whitespace. This workbench supports print with an optional /regex/ or $N comparison condition.',
-    examples: [["awk '{print $1}' access.log", 'first column'], ["awk '$9 == 404 {print $7}' access.log", 'paths that returned 404']],
-  },
+  man: manual('awk', ["awk [-F SEP] '{print $1, $3}' [FILE]...", "awk [-F SEP] '/RE/ {print $2}' [FILE]...", "awk '$9 == 500 {print $1}' [FILE]..."]),
   run(ctx) {
     const a = parseArgs(ctx.argv.slice(1), { values: 'F' });
     if (a.unknown) return ctx.fail(`invalid option ${a.unknown}`, 2);
@@ -680,12 +578,7 @@ const awk: Command = {
 
 const tee: Command = {
   name: 'tee',
-  man: {
-    name: 'copy standard input to a file and to standard output',
-    synopsis: ['tee [-a] FILE...'],
-    description: 'Lets you save the output of a pipeline and still see it. -a appends.',
-    examples: [['grep Failed auth.log | tee failures.txt | wc -l', 'keep the evidence and the count']],
-  },
+  man: manual('tee', ['tee [-a] FILE...']),
   run(ctx) {
     const a = parseArgs(ctx.argv.slice(1), { flags: 'a' });
     const input = ctx.stdin ?? '';
@@ -703,7 +596,7 @@ const tee: Command = {
 
 const nl: Command = {
   name: 'nl',
-  man: { name: 'number lines', synopsis: ['nl [FILE]'], description: 'Prints lines with line numbers.' },
+  man: manual('nl', ['nl [FILE]']),
   run(ctx) {
     const { lines, code } = readAllLines(ctx, ctx.argv.slice(1));
     let n = 1;

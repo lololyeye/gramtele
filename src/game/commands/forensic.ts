@@ -1,6 +1,7 @@
 import type { Command } from '../terminal/types';
 import { eachInput, parseArgs, splitLines, toBytes } from './args';
 import { pdfText, readExif, sniffType } from './magic';
+import { manual } from './manual';
 
 // ---------- SHA-256 (implemented locally so hashing is synchronous and works anywhere) ----------
 
@@ -84,14 +85,7 @@ export function b64decode(s: string): string | null {
 const sha256sum: Command = {
   name: 'sha256sum',
   tool: 'forensics',
-  man: {
-    name: 'compute or check SHA-256 hashes',
-    synopsis: ['sha256sum FILE...', 'sha256sum -c MANIFEST'],
-    description: 'Computes a 256-bit fingerprint of a file. Change a single byte and the hash changes completely. With -c, reads "HASH  FILE" lines and verifies each one. Your copy, or evidence you were handed, either matches the record or it does not.',
-    options: [['-c FILE', 'check hashes listed in FILE']],
-    examples: [['sha256sum auth.log', 'fingerprint a file'], ['sha256sum -c MANIFEST.sha256', 'verify a whole evidence bundle']],
-    why: 'Hashes are how forensic evidence stays defensible. You record the hash at collection, and anyone can later verify nothing changed. MD5 and SHA-1 have known collisions; use SHA-256.',
-  },
+  man: manual('sha256sum', ['sha256sum FILE...', 'sha256sum -c MANIFEST']),
   run(ctx) {
     const a = parseArgs(ctx.argv.slice(1), { flags: 'cb', long: { check: 'c' } });
     if (a.unknown) return ctx.fail(`invalid option ${a.unknown}`, 2);
@@ -131,14 +125,7 @@ const sha256sum: Command = {
 const base64: Command = {
   name: 'base64',
   tool: 'forensics',
-  man: {
-    name: 'encode or decode base64',
-    synopsis: ['base64 [FILE]', 'base64 -d [FILE]'],
-    description: 'Base64 represents arbitrary bytes using only 64 printable characters, so binary data can travel through text channels. Output often ends with = padding. It is an encoding: anyone can reverse it. No key, no secrecy.',
-    options: [['-d', 'decode']],
-    examples: [['echo -n admin | base64', 'gives YWRtaW4='], ['echo YWRtaW4= | base64 -d', 'gives admin']],
-    why: 'Base64 is everywhere: HTTP basic auth, session tokens, email attachments. Mistaking it for encryption is a classic, very real security bug.',
-  },
+  man: manual('base64', ['base64 [FILE]', 'base64 -d [FILE]']),
   run(ctx) {
     const a = parseArgs(ctx.argv.slice(1), { flags: 'dw', long: { decode: 'd' } });
     if (a.unknown) return ctx.fail(`invalid option ${a.unknown}`, 2);
@@ -158,14 +145,7 @@ const base64: Command = {
 const xxd: Command = {
   name: 'xxd',
   tool: 'forensics',
-  man: {
-    name: 'make a hexdump, or reverse one',
-    synopsis: ['xxd [-l N] FILE', 'xxd -p FILE', 'xxd -r -p'],
-    description: 'Shows the raw bytes of a file in hexadecimal, with printable characters on the right. -r -p turns plain hex back into bytes, useful when someone hands you a hex string.',
-    options: [['-l N', 'stop after N bytes'], ['-p', 'plain hex with no addresses'], ['-r', 'reverse: hex to bytes']],
-    examples: [['xxd -l 16 photo.jpg', 'the first bytes reveal the true file type: ff d8 ff is JPEG'], ['echo 68656c6c6f | xxd -r -p', 'decodes to "hello"']],
-    why: 'File signatures, hidden data, malformed headers: when tools disagree, the bytes settle it.',
-  },
+  man: manual('xxd', ['xxd [-l N] FILE', 'xxd -p FILE', 'xxd -r -p']),
   run(ctx) {
     const a = parseArgs(ctx.argv.slice(1), { flags: 'pr', values: 'l' });
     if (a.unknown) return ctx.fail(`invalid option ${a.unknown}`, 2);
@@ -200,14 +180,7 @@ const xxd: Command = {
 const strings: Command = {
   name: 'strings',
   tool: 'forensics',
-  man: {
-    name: 'print printable character sequences in a file',
-    synopsis: ['strings [-n MIN] FILE'],
-    description: 'Scans any file, binary included, for runs of printable characters of at least 4 characters. A blunt but astonishingly effective first look at an unknown file.',
-    options: [['-n N', 'minimum run length']],
-    examples: [['strings photo.jpg | head', 'what readable text is embedded in here?']],
-    why: 'Paths, URLs, author names and leftover comments survive inside binaries more often than their authors expect.',
-  },
+  man: manual('strings', ['strings [-n MIN] FILE']),
   run(ctx) {
     const a = parseArgs(ctx.argv.slice(1), { values: 'n' });
     if (a.unknown) return ctx.fail(`invalid option ${a.unknown}`, 2);
@@ -230,13 +203,7 @@ const strings: Command = {
 const exiftool: Command = {
   name: 'exiftool',
   tool: 'osint',
-  man: {
-    name: 'read file metadata',
-    synopsis: ['exiftool FILE...'],
-    description: 'Reads metadata embedded in documents and images: author, software, creation dates, camera model, GPS coordinates. Many people have no idea this data travels with their files.',
-    examples: [['exiftool ridge_0412.jpg', 'where and when was this photo taken?'], ['exiftool newsletter.pdf', 'who wrote this document, on what software?']],
-    why: 'Metadata has ended careers and located fugitives. The defensive lesson: strip it before you publish anything. It can also be forged, so corroborate.',
-  },
+  man: manual('exiftool', ['exiftool FILE...']),
   run(ctx) {
     if (ctx.argv.length < 2) return ctx.fail('usage: exiftool FILE...');
     let code = 0;
@@ -268,12 +235,7 @@ const exiftool: Command = {
 const pdftotext: Command = {
   name: 'pdftotext',
   tool: 'osint',
-  man: {
-    name: 'extract text from a PDF',
-    synopsis: ['pdftotext FILE [-]'],
-    description: 'Prints the text content of a PDF to standard output, so that it can be piped into grep and friends.',
-    examples: [['pdftotext newsletter.pdf | grep -i maret', 'find a name in a document']],
-  },
+  man: manual('pdftotext', ['pdftotext FILE [-]']),
   run(ctx) {
     const f = ctx.argv[1];
     if (!f) return ctx.fail('usage: pdftotext FILE [-]');

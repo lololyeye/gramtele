@@ -9,11 +9,11 @@ import { buildSites } from '../data/world/sites';
 import { ALL_COMMANDS, HELP_GROUPS } from '../game/commands';
 import { VFS } from '../game/filesystem/vfs';
 import type { GameState } from '../game/types';
-import { documentStrings, localizeDocument } from './documents';
+import { documentKeys, localizeDocument } from './documents';
 import { EN_UI } from './en/ui';
 import './fr';
 import { FR_UI } from './fr/ui';
-import { chooseLanguage, detectLanguage, getLanguage, hasTranslation, initLanguage, languagePref, setLanguage, T, Tn, tr, ui } from './index';
+import { chooseLanguage, detectLanguage, getLanguage, hasTranslation, initLanguage, languagePref, lineIn, lineKey, setLanguage, T, Tn, tr, ui } from './index';
 
 afterEach(() => setLanguage('en'));
 
@@ -176,14 +176,11 @@ describe('the French catalog is complete', () => {
   it('web pages and documents', () => {
     const out: string[] = [];
     for (const site of buildSites()) {
-      const pages = (site as unknown as { pages?: Record<string, { body: string; type?: string }> }).pages;
-      if (!pages) continue;
-      for (const [path, page] of Object.entries(pages)) {
-        if (page.type === 'image/jpeg' || path === '/robots.txt') continue;
-        out.push(...documentStrings(page.body));
-      }
+      const pages = (site as unknown as { pages?: Record<string, { body: string }> }).pages;
+      for (const page of Object.values(pages ?? {})) out.push(...documentKeys(page.body));
     }
-    expect(missing(out)).toEqual([]);
+    expect(out.length).toBeGreaterThan(50);
+    expect(out.filter((k) => lineIn('fr', lineKey(k)) === null || lineIn('en', lineKey(k)) === null)).toEqual([]);
   });
 
   it('story files on the workbench', () => {
